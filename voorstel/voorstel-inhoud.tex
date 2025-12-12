@@ -1,0 +1,289 @@
+
+
+
+%---------- Inleiding ---------------------------------------------------------
+
+% TODO: Is dit voorstel gebaseerd op een paper van Research Methods die je
+% vorig jaar hebt ingediend? Heb je daarbij eventueel samengewerkt met een
+% andere student?
+% Zo ja, haal dan de tekst hieronder uit commentaar en pas aan.
+
+%\paragraph{Opmerking}
+
+% Dit voorstel is gebaseerd op het onderzoeksvoorstel dat werd geschreven in het
+% kader van het vak Research Methods dat ik (vorig/dit) academiejaar heb
+% uitgewerkt (met medesturent VOORNAAM NAAM als mede-auteur).
+% 
+
+\section{Inleiding}%
+\label{sec:inleiding}
+
+
+
+Virtualisatie is een cruciale technologie binnen moderne IT-infrastructuren en stelt organisaties in staat om hun hardware efficïent te gebruiken door meerdere geïsoleerde omgevingen op één fysiek platform te draaien. Proxmox Virtual Environment (Proxmox VE) is een populair open-source virtualisatieplatform dat zowel klassieke virtual machines (VM's) als Linux containers (LXC) ondersteunt. Ookal zijn VM's de standaard voor systeemvirtualisatie, bieden LXC-containers een lichtgewicht alternatief met mogelijk minder resourceverbruik en kortere opstarttijden \autocite{Merkel2014, Felter2015}.
+
+
+Het Virtual IT Company (VIC) van HOGENT maakt momenteel uitsluitend gebruik van klassieke VM's voor het aanbieden van verschillende applicaties en services, zoals webservers, databases en testomgevingen. Hoewel deze aanpak effectief is, blijft de vraag of LXC-containers in sommige situaties een efficiënter, veiliger en eenvoudiger alternatief kunnen bieden. Met de groeiende interesse in containerisatie en de mogelijke integratie van Kubernetes in de toekomst, is het voor het VIC relevant om te onderzoeken in welke mate LXC-containers toegevoegde waarde kunnen bieden ten opzichte van de huidige VM-gebaseerde infrastructuur.
+
+\subsection{Probleemstelling}
+
+{\textcolor{orange}{
+Binnen het VIC is er momenteel geen duidelijk inzicht in de functionele en technische verschillen tussen VM's en LXC-containers op Proxmox en ook in de impact van deze keuze op performance, beveiliging, resource usage en management. Bovendien draait het VIC op Proxmox versie 8, terwijl recentere versies zoals Proxmox 9 mogelijk nieuwe functionaliteiten of verbeteringen bieden op het gebied van LXC-containers. Er ontbreekt een duidelijk beslissingskader om vast te stellen in welke situaties het gebruik van LXC-containers te kiezen boven klassieke VM’s, en wat de gevolgen daarvan zijn voor onder meer isolatie tussen klantomgevingen (zoals studenten of projecten), backup-strategieën en de toekomstige koppeling met Kubernetes.
+}}
+
+\subsection{Onderzoeksvraag}
+
+De hoofdonderzoeksvraag van dit onderzoek is:
+
+{\textcolor{yellow}{
+\textbf{In welke mate kan het VIC van HOGENT profiteren van het inzetten van LXC-containers op Proxmox in plaats van klassieke VM's, rekening houdend met performance, beveiliging, management en toekomstige uitbreidingsmogelijkheden zoals Kubernetes?}
+}}
+
+Om deze hoofdvraag te beantwoorden, worden de volgende deelvragen geformuleerd:
+
+\textcolor{cyan}{\textbf{Deelvragen probleemdomein:}}
+\begin{itemize}
+    \item \textcolor{cyan}{Wat zijn de belangrijkste functionele en technische verschillen tussen VM's en LXC-containers binnen Proxmox?}
+    \item \textcolor{cyan}{Welke impact heeft de keuze tussen VM's en LXC-containers op performance (CPU, geheugen, opstarttijd), resource usage en schaalbaarheid?}
+    \item \textcolor{cyan}{Welke beveiligingsimplicaties zijn er verbonden aan het gebruik van VM's versus LXC-containers, op het vlak van isolatie tussen klantomgevingen?}
+    \item \textcolor{cyan}{Wat zijn de verschillen tussen Proxmox versie 8 en versie 9 op het vlak van LXC-containers en hun functionaliteiten?}
+    \item \textcolor{cyan}{Op welke wijze ondersteunt Proxmox Backup Server de backup van VM's en LXC-containers en wat zijn de resultaten voor betrouwbaarheid en restoretijd?}
+\end{itemize}
+
+\textcolor{green}{\textbf{Deelvragen oplossingsdomein:}}
+\begin{itemize}
+    \item \textcolor{green}{Welke scenario's of use-cases binnen het VIC zijn beter geschikt voor het gebruik van LXC-containers dan voor VM's (of omgekeerd)?}
+    \item \textcolor{green}{Wat zijn de beste praktijken voor het opzetten, beheren en beveiligen van LXC-containers in productieomgevingen zoals het VIC?}
+    \item \textcolor{green}{Hoe verhoudt het gebruik van LXC-containers zich tot toekomstige plannen voor de implementatie van Kubernetes binnen het VIC?}
+    \item \textcolor{green}{Welke richtlijnen helpen IT-beheerders bij het kiezen van de juiste technologie (VM's of LXC) voor specifieke workloads?}
+\end{itemize}
+
+
+
+\subsection{Onderzoeksdoelstelling}
+
+Het doel van dit onderzoek is om het VIC van HOGENT te voorzien van een adviesrapport met duidelijke argumenten voor het kiezen tussen VM's en LXC-containers op Proxmox. Dit adviesrapport zal gebaseerd zijn op een grondige literatuurstudie en een praktische proof-of-concept (PoC) waarin de performance, beveiliging en management van beide virtualisatietechnologieën worden vergeleken in een testomgeving.
+
+Het concrete eindresultaat bevat:
+\begin{itemize}
+    \item Een \textbf{adviesrapport} met heldere richtlijnen en argumenten voor het VIC om te bepalen wanneer LXC-containers of VM's de voorkeur hebben voor specifieke services.
+    \item Een \textbf{proof-of-concept} met een testopstelling op Proxmox (versie 8 en eventueel 9) waarin praktische metingen worden uitgevoerd rond performance, resource-efficiëntie, isolatie en backup-mogelijkheden.
+    \item Een \textbf{vergelijking} van relevante functionaliteiten tussen Proxmox 8.X en 9 voor LXC-containers, en een evaluatie van de meerwaarde van een eventuele upgrade.
+\end{itemize}
+
+\subsection{Doelgroep}
+
+De primaire doelgroep van dit onderzoek bestaat uit de IT-beheerders van VIC HOGENT, die verantwoordelijk zijn voor het ontwerp, beheer en optimalisatie van de virtualisatie infrastructuur. Daarnaast kan dit onderzoek relevant zijn voor systeembeheerders in vergelijkbare onderwijsinstellingen of KMO's die Proxmox gebruiken.
+
+
+%---------- Stand van zaken ---------------------------------------------------
+
+\section{Literatuurstudie}%
+\label{sec:literatuurstudie}
+
+\subsection{Virtualisatie: VM's en LXC-containers}
+
+Virtualisatie kan op verschillende niveaus gebeuren. Een eerste manier is \textbf{volledige virtualisatie} met virtual machines (VM's). Een tweede manier is \textbf{OS-level virtualisatie} met containers \autocite{Felter2015}. VM's draaien een volledig besturingssysteem bovenop een hypervisor. Dit zorgt voor sterke isolatie. Het zorgt ook voor extra overhead omdat elke VM zijn eigen kernel en diensten nodig heeft \autocite{Sharma2016}. Containers delen de kernel van de host. Ze gebruiken Linux-features zoals \textbf{namespaces} en \textbf{cgroups} om processen en resources te scheiden \autocite{Merkel2014, Nginx2021}. Daardoor hebben containers meestal minder geheugenverbruik en minder CPU-overhead.
+
+Studies tonen aan dat containers bijna dezelfde performance halen als native workloads \autocite{Felter2015, ArXiv2023Convergence}. VM's hebben wat extra overhead door de hypervisor. In de praktijk kan je met containers meer geïsoleerde omgevingen op dezelfde hardware draaien. Dat is interessant voor een omgeving zoals het VIC waar veel kleine services naast elkaar bestaan.
+
+\subsection{LXC-containers en Docker}
+
+LXC en Docker gebruiken allebei OS-level virtualisatie. Toch hebben ze een andere focus. LXC biedt \textbf{system containers}. Dit zijn volledige Linux-omgevingen met meerdere processen en eigen netwerk \autocite{Soltesz2007}. Docker richt zich op \textbf{application containers} met meestal één service per container \autocite{Merkel2014}.
+
+\subsection{Proxmox VE en LXC-integratie}
+
+Proxmox VE ondersteunt zowel VM's als LXC-containers \autocite{ProxmoxDocs}. LXC-containers in Proxmox delen de host-kernel en hebben daardoor minder geheugenverbruik en minder CPU-overhead \autocite{ReadySpace2023}. Ze starten in enkele seconden op terwijl VM's meer tijd nodig hebben \autocite{TechOpt2025}. Op één fysieke host kan men meestal meer LXC-containers draaien dan VM's.
+
+\subsection{Beveiliging en isolatie}
+
+VM's emuleren hardware en gebruiken een aparte kernel. Een fout in één VM heeft normaal geen directe impact op andere VM's of de host \autocite{ArXiv2021Isolation}. Containers delen de kernel van de host. Een kwetsbaarheid in de kernel kan in theorie alle containers beïnvloeden \autocite{Aquasec2024}. Isolatie gebeurt met namespaces en cgroups en niet met hardware \autocite{Infosec2021}.
+
+\textbf{Unprivileged containers} verlagen het risico \autocite{SecurityLabs2023}. In zo'n container heeft een proces geen echte root-rechten op de host. Voor het VIC is het logisch kritieke applicaties in VM's te houden. Minder kritieke services kunnen in LXC-containers draaien als die correct geconfigureerd zijn.
+
+\subsection{Proxmox Backup Server en backups}
+
+VM-backups werken op block-niveau met dirty bitmaps. Daardoor zijn incrementele backups efficiënt en snel \autocite{ItNotes2020}. LXC-backups zijn file-level en moeten alle bestanden bekijken. Bij kleine containers is dat voldoende. Bij grote containers kan dit veel tijd kosten \autocite{ProxmoxForum2021, ProxmoxForum2024}. LXC-backups naar PBS zijn trager en soms groter dan VM-backups. Dit is merkbaar vooral bij containers groter dan 100 GB \autocite{ProxmoxForum2025}.
+
+\subsection{Proxmox 8 en Proxmox 9}
+
+Proxmox 9 brengt verbeteringen voor LXC-containers. Het gebruikt LXC 6.0.4 in plaats van LXC 5.0.x met betere cgroup v2-integratie \autocite{Xtom2025}. De kernel is ook nieuwer: kernel 6.14.x in plaats van 6.5/6.8 \autocite{UnixHost2025}. Proxmox 9 biedt snapshot-ondersteuning voor thick-provisioned LVM-volumes wat in versie 8 beperkt was \autocite{Proxmox2025, Saturnme2025}.
+
+\subsection{Kubernetes en LXC-containers}
+
+Kubernetes is het standaard platform voor application containers \autocite{IEEE2014Containers}. LXC zijn system containers. Ze hebben een ander doel dan Docker en andere application containers. Kubernetes verwacht dus eerder application containers. In theorie kan Kubernetes LXC-containers beheren via LXD \autocite{StackOverflow2020}. Voor het VIC dat in de toekomst Kubernetes wil gebruiken is het nuttig te weten dat LXC en Kubernetes verschillende doelen hebben.
+
+\subsection{Samenvatting van de literatuur}
+
+Containers hebben minder overhead dan VM's en schalen beter. VM's bieden de sterkste isolatie. Proxmox geeft veel vrijheid maar ook extra keuze. Er is veel onderzoek naar Docker in cloudomgevingen. Er zijn weinig praktische studies die LXC op Proxmox vergelijken met VM's in een setting zoals het VIC. Dit onderzoek wil dat gat opvullen.
+
+
+
+
+%---------- Methodologie ------------------------------------------------------
+\section{Methodologie}%
+\label{sec:methodologie}
+
+Dit onderzoek gebruikt vier fases. In elke fase zijn er duidelijke doelen en resultaten. Zo kan ik stap voor stap naar een advies voor het VIC werken.
+
+\subsection{Fase 1: Literatuurstudie (weken 1–3)}
+
+In de eerste fase verzamel ik informatie over VM's, LXC-containers en Proxmox. Ik focus op technische verschillen, performance, beveiliging, backups en versieverschillen tussen Proxmox 8 en 9.
+
+\textbf{Onderzoekstechnieken:}
+\begin{itemize}
+    \item zoeken en lezen van wetenschappelijke artikels en technische documenten over virtualisatie en containers;
+    \item analyseren van vergelijkende studies tussen VM's en containers;
+    \item doornemen van Proxmox-documentatie, release notes en changelogs;
+    \item bekijken van richtlijnen rond containerbeveiliging en isolatie.
+\end{itemize}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item een overzicht van de belangrijkste technische verschillen tussen VM's en LXC-containers;
+    \item een samenvatting van de relevante verschillen tussen Proxmox 8 en 9 voor LXC;
+    \item een eerste set criteria waarop ik later ga testen.
+\end{itemize}
+
+\subsection{Fase 2: Requirements en testomgeving (weken 4–5)}
+
+In deze fase bepaal ik wat ik precies ga testen en hoe de testomgeving eruitziet. Dit doe ik samen met de promotor en, indien mogelijk, met beheerders van het VIC.
+
+\textbf{Onderzoekstechnieken:}
+\begin{itemize}
+    \item korte overlegmomenten om typische workloads en eisen van het VIC te verzamelen;
+    \item opzetten van een homelab met Proxmox 9 en een extra node met Proxmox 8;
+    \item kiezen van een aantal representatieve services, zoals een webserver en een kleine database;
+    \item bepalen van meetbare criteria: CPU, geheugen, opstarttijd, I/O en backupduur.
+\end{itemize}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item een beschrijving van de testopstelling (hardware, software en netwerk);
+    \item een lijst met concrete tests en workloads;
+    \item een tabel met de metrieken die ik in fase 3 ga meten.
+\end{itemize}
+
+\subsection{Fase 3: Proof-of-concept en metingen (weken 6–10)}
+
+In deze fase voer ik de praktische testen uit. Ik zet dezelfde services op in VM's en in LXC-containers. Dit doe ik op Proxmox 8 en op Proxmox 9. Daarna vergelijk ik de resultaten.
+
+\textbf{Onderzoekstechnieken:}
+\begin{itemize}
+    \item opzetten van identieke omgevingen in VM en LXC (bijvoorbeeld een webserver en een database);
+    \item uitvoeren van benchmarks met tools zoals \texttt{sysbench}, \texttt{fio} en \texttt{iperf3};
+    \item meten van opstarttijden, CPU- en geheugengebruik in idle en onder belasting;
+    \item testen van backup en restore met Proxmox Backup Server;
+    \item uitvoeren van eenvoudige isolatietesten om verschillen in beveiliging zichtbaar te maken.
+\end{itemize}
+
+\textbf{Tools:}
+\begin{itemize}
+    \item Proxmox VE 8 en 9;
+    \item Proxmox Backup Server;
+    \item \texttt{sysbench}, \texttt{fio}, \texttt{iperf3};
+    \item monitoringtools zoals \texttt{htop} en \texttt{iostat}.
+\end{itemize}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item meetresultaten per test (tabellen of grafieken);
+    \item een eerste vergelijking tussen VM en LXC op vlak van performance en resources;
+    \item observaties over backupduur en gedrag bij grotere en kleinere workloads.
+\end{itemize}
+
+\subsection{Fase 4: Analyse en advies (weken 11–14)}
+
+In de laatste fase verwerk ik de resultaten. Ik maak er een duidelijk advies van voor het VIC.
+
+\textbf{Onderzoekstechnieken:}
+\begin{itemize}
+    \item vergelijken van de meetresultaten en zoeken naar duidelijke trends;
+    \item koppelen van de praktijkresultaten aan wat uit de literatuur kwam;
+    \item opstellen van eenvoudige beslissingsregels en een decision tree;
+    \item formuleren van concrete aanbevelingen voor het VIC.
+\end{itemize}
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item een adviesrapport met richtlijnen voor de keuze tussen VM en LXC;
+    \item een eenvoudige decision tree per type workload;
+    \item aanbevelingen rond het gebruik van Proxmox 8 of 9 voor LXC-containers.
+\end{itemize}
+
+\subsection{Tijdsplanning}
+
+Het onderzoek loopt over 14 weken. Minimaal één dag per week wordt aan de bachelorproef besteed. De planning is als volgt:
+
+\begin{itemize}
+    \item weken 1–3: literatuurstudie;
+    \item weken 4–5: requirements en opzetten testomgeving;
+    \item weken 6–10: proof-of-concept en metingen;
+    \item weken 11–14: analyse, advies en uitwerking teksten.
+\end{itemize}
+
+\subsection{Validatie}
+
+Om de resultaten betrouwbaar te maken, herhaal ik metingen meerdere keren. Ik documenteer de testopstelling duidelijk zodat deze later opnieuw kan worden nagebouwd. Belangrijke keuzes en tussentijdse resultaten bespreek ik met de promotor en, indien mogelijk, met de co-promotor.
+
+
+
+%---------- Verwachte resultaten ----------------------------------------------
+\section{Verwacht resultaat, conclusie}%
+\label{sec:verwachte_resultaten}
+
+\subsection{Verwacht resultaat voor performance en resources}
+
+Op basis van de literatuur en praktijkervaring verwacht ik dat LXC-containers minder overhead hebben dan VM's. LXC-containers gebruiken minder geheugen dan VM's. Een VM heeft vaak 250--500 MB RAM overhead. Een LXC-container meestal 10--50 MB \autocite{LogicWeb2025}. Voor het VIC, met veel kleine services, kan dit veel geheugen vrijmaken.
+
+Containers starten ook veel sneller op dan VM's. LXC-containers starten in enkele seconden. VM's hebben vaak 10 tot 60 seconden nodig \autocite{LogicWeb2025}. Dit verschil is aanwezig, maar in het VIC minder belangrijk omdat services meestal lang blijven draaien.
+
+Het CPU-overhead van containers is klein. Ze draaien bijna met native performance. VM's hebben extra overhead door de hypervisor \autocite{LogicWeb2025, ArXiv2023Convergence}. Ook bij netwerk- en disk-I/O verwacht ik dat LXC-containers betere of gelijkaardige resultaten tonen dan VM's \autocite{LogicWeb2025}. In het algemeen verwacht ik dat het VIC meer services op dezelfde hardware kan draaien als een deel van de huidige VM's vervangen wordt door LXC-containers.
+
+\subsection{Verwachte beveiligingsbevindingen}
+
+Ik verwacht dat VM's de beste isolatie blijven bieden. Ze gebruiken een eigen kernel en emuleren hardware. Een aanval in één VM heeft normaal geen directe impact op andere VM's of de host \autocite{ArXiv2021Isolation}. LXC-containers delen de kernel met de host. Daardoor kan een kernelkwetsbaarheid in theorie alle containers raken \autocite{Aquasec2024}.
+
+Voor minder kritieke services verwacht ik dat LXC-containers voldoende veilig kunnen zijn. Zeker als er gebruik wordt gemaakt van unprivileged containers en goede configuratie \autocite{SecurityLabs2023}. Voor kritieke services of gevoelige data verwacht ik dat VM's aangeraden blijven. Voor testomgevingen en kleine webservices verwacht ik dat LXC-containers een goed alternatief bieden.
+
+\subsection{Verwachte backupresultaten}
+
+Ik verwacht dat backups van VM's meestal sneller en efficiënter zullen zijn dan backups van grote LXC-containers. VM-backups werken op block-niveau en gebruiken dirty bitmaps. Incrementele backups kunnen daardoor snel verlopen \autocite{ItNotes2020}. LXC-backups zijn file-level en moeten alle bestanden doorlopen. Dit is vooral traag bij containers met veel kleine bestanden \autocite{ProxmoxForum2021, ProxmoxForum2024}.
+
+Uit ervaringen van andere gebruikers blijkt dat LXC-backups naar Proxmox Backup Server trager zijn bij containers groter dan 100 GB \autocite{ProxmoxForum2025}. Voor het VIC verwacht ik dat kleine LXC-containers geen probleem vormen. Grote workloads of databases zijn waarschijnlijk beter als VM, zeker wanneer snelle backups en restores nodig zijn.
+
+\subsection{Verwachte versieverschillen tussen Proxmox 8 en 9}
+
+Ik verwacht dat Proxmox 9 enkele duidelijke voordelen heeft voor LXC-containers. Proxmox 9 gebruikt een nieuwere LXC-versie en kernel. Daardoor zal resource-isolatie beter afgesteld kunnen worden en zijn er verbeteringen in performance en hardware-ondersteuning \autocite{Xtom2025, UnixHost2025}. 
+
+Een belangrijk verschil is de verbeterde snapshot-ondersteuning voor LVM-storage \autocite{Proxmox2025, Saturnme2025}. Dit kan nuttig zijn voor backups en tests. Ik verwacht dat deze verbeteringen vooral relevant zijn voor LXC-workloads. Voor klassieke VM-workloads zal het verschil kleiner zijn.
+
+\subsection{Verwachte scenario's en beslissingscriteria}
+
+Ik verwacht dat het onderzoek zal uitwijzen dat LXC-containers vooral geschikt zijn voor:
+
+\begin{itemize}
+    \item lichte services zoals webservers, reverse proxies, DNS-servers en kleine applicaties;
+    \item services met beperkte opslag, bijvoorbeeld tot 50 à 100 GB;
+    \item test- en ontwikkelomgevingen;
+    \item educatieve omgevingen zoals studentenprojecten.
+\end{itemize}
+
+Ik verwacht dat VM's beter blijven voor:
+
+\begin{itemize}
+    \item applicaties die een ander besturingssysteem nodig hebben, zoals Windows;
+    \item workloads groter dan 100 GB die vaak geback-upt moeten worden;
+    \item applicaties met strenge beveiligings- of compliance-eisen;
+    \item services die speciale kernelversies of kernelmodules nodig hebben.
+\end{itemize}
+
+Op basis van de resultaten wil ik een beslissingskader maken. Dit moet IT-beheerders helpen om per service te kiezen tussen een VM en een LXC-container.
+
+\subsection{Verwachte meerwaarde en conclusie}
+
+De verwachte meerwaarde voor het VIC is vooral een beter gebruik van resources. Door lichte services in LXC-containers te draaien kan het VIC meer services plaatsen op dezelfde hardware. Daarnaast krijgt het VIC een duidelijk overzicht van wanneer een LXC-container volstaat en wanneer een VM nodig is. 
+
+Het onderzoek moet dus twee dingen opleveren. Ten eerste meetresultaten uit de proof-of-concept. Ten tweede een duidelijk advies met praktische richtlijnen. Daarmee kan het VIC betere keuzes maken voor toekomstige services en beter plannen of een upgrade naar Proxmox 9 nuttig is.
+
+
