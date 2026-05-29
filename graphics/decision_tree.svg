@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1320" viewBox="0 0 1100 1320" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,6 L0,12 z" fill="#444"/>
+    </marker>
+    <style>
+      .question { fill: #f4f6fb; stroke: #2b3a55; stroke-width: 2; }
+      .vm       { fill: #fde2e2; stroke: #c33; stroke-width: 2; }
+      .lxc      { fill: #d8f3dc; stroke: #2d6a4f; stroke-width: 2; }
+      .label    { font-size: 16px; font-weight: 600; fill: #1c1c1c; }
+      .tag      { font-size: 13px; fill: #444; }
+      .edge     { stroke: #444; stroke-width: 1.6; fill: none; }
+      .yes      { fill: #c33; font-weight: 700; font-size: 13px; }
+      .no       { fill: #2d6a4f; font-weight: 700; font-size: 13px; }
+      .terminal { font-size: 14px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <text x="550" y="32" text-anchor="middle" font-size="22" font-weight="700" fill="#1c1c1c">Beslissingskader: VM versus LXC binnen het VIC</text>
+  <text x="550" y="56" text-anchor="middle" font-size="13" fill="#555">Op basis van empirische metingen — Hoofdstuk 4, Bachelorproef Halil Dzhaner</text>
+
+  <!-- Q1 -->
+  <rect class="question" x="370" y="90"  width="360" height="70" rx="10"/>
+  <text class="label" x="550" y="120" text-anchor="middle">1. Is het guest-besturingssysteem Linux?</text>
+  <text class="tag"   x="550" y="142" text-anchor="middle">(Windows / BSD / specifieke kernel-versie)</text>
+
+  <!-- Q1 -> VM (left) -->
+  <line class="edge" x1="370" y1="125" x2="180" y2="220" marker-end="url(#arrow)"/>
+  <text class="yes" x="245" y="170" text-anchor="middle">nee</text>
+
+  <!-- Q1 -> Q2 (down) -->
+  <line class="edge" x1="550" y1="160" x2="550" y2="220" marker-end="url(#arrow)"/>
+  <text class="no" x="565" y="195">ja</text>
+
+  <!-- VM-A terminal -->
+  <rect class="vm" x="40" y="220" width="280" height="60" rx="10"/>
+  <text class="terminal" x="180" y="248" text-anchor="middle" fill="#7a1a1a">Kies VM</text>
+  <text class="tag"      x="180" y="268" text-anchor="middle">eigen kernel verplicht</text>
+
+  <!-- Q2 -->
+  <rect class="question" x="370" y="220" width="360" height="70" rx="10"/>
+  <text class="label" x="550" y="248" text-anchor="middle">2. Vereist de service kernel-modules</text>
+  <text class="label" x="550" y="268" text-anchor="middle">of speciale kernel-features?</text>
+
+  <!-- Q2 -> VM-B (right) -->
+  <line class="edge" x1="730" y1="255" x2="900" y2="350" marker-end="url(#arrow)"/>
+  <text class="yes" x="835" y="305" text-anchor="middle">ja</text>
+
+  <!-- Q2 -> Q3 (down) -->
+  <line class="edge" x1="550" y1="290" x2="550" y2="350" marker-end="url(#arrow)"/>
+  <text class="no" x="565" y="325">nee</text>
+
+  <!-- VM-B terminal -->
+  <rect class="vm" x="780" y="350" width="280" height="60" rx="10"/>
+  <text class="terminal" x="920" y="378" text-anchor="middle" fill="#7a1a1a">Kies VM</text>
+  <text class="tag"      x="920" y="398" text-anchor="middle">kernel-toegang noodzakelijk</text>
+
+  <!-- Q3 -->
+  <rect class="question" x="370" y="350" width="360" height="80" rx="10"/>
+  <text class="label" x="550" y="378" text-anchor="middle">3. Multi-tenant met externe gebruikers</text>
+  <text class="label" x="550" y="398" text-anchor="middle">of strikte compliance-eisen?</text>
+  <text class="tag"   x="550" y="418" text-anchor="middle">(GDPR-zone, gescheiden klant-data)</text>
+
+  <!-- Q3 -> VM-C (left) -->
+  <line class="edge" x1="370" y1="390" x2="180" y2="490" marker-end="url(#arrow)"/>
+  <text class="yes" x="245" y="445" text-anchor="middle">ja</text>
+
+  <!-- Q3 -> Q4 (down) -->
+  <line class="edge" x1="550" y1="430" x2="550" y2="490" marker-end="url(#arrow)"/>
+  <text class="no" x="565" y="465">nee</text>
+
+  <!-- VM-C terminal -->
+  <rect class="vm" x="40" y="490" width="280" height="60" rx="10"/>
+  <text class="terminal" x="180" y="518" text-anchor="middle" fill="#7a1a1a">Kies VM</text>
+  <text class="tag"      x="180" y="538" text-anchor="middle">sterkste isolatie via hypervisor</text>
+
+  <!-- Q4 -->
+  <rect class="question" x="370" y="490" width="360" height="80" rx="10"/>
+  <text class="label" x="550" y="518" text-anchor="middle">4. Werklast met &gt; 50 GB live data</text>
+  <text class="label" x="550" y="538" text-anchor="middle">en frequente incrementele backups?</text>
+  <text class="tag"   x="550" y="558" text-anchor="middle">(database, fileserver)</text>
+
+  <!-- Q4 -> VM-D (right) -->
+  <line class="edge" x1="730" y1="530" x2="900" y2="630" marker-end="url(#arrow)"/>
+  <text class="yes" x="835" y="585" text-anchor="middle">ja</text>
+
+  <!-- Q4 -> Q5 (down) -->
+  <line class="edge" x1="550" y1="570" x2="550" y2="630" marker-end="url(#arrow)"/>
+  <text class="no" x="565" y="605">nee</text>
+
+  <!-- VM-D terminal -->
+  <rect class="vm" x="780" y="630" width="280" height="68" rx="10"/>
+  <text class="terminal" x="920" y="658" text-anchor="middle" fill="#7a1a1a">Kies VM</text>
+  <text class="tag"      x="920" y="678" text-anchor="middle">block-level + dirty bitmap:</text>
+  <text class="tag"      x="920" y="692" text-anchor="middle">incrementeel ~10× sneller dan LXC</text>
+
+  <!-- Q5 -->
+  <rect class="question" x="370" y="630" width="360" height="80" rx="10"/>
+  <text class="label" x="550" y="658" text-anchor="middle">5. Disk-I/O- of database-zware</text>
+  <text class="label" x="550" y="678" text-anchor="middle">workload?</text>
+  <text class="tag"   x="550" y="698" text-anchor="middle">(vele writes, lage latency vereist)</text>
+
+  <!-- Q5 -> LXC-A (right) -->
+  <line class="edge" x1="730" y1="670" x2="900" y2="770" marker-end="url(#arrow)"/>
+  <text class="yes" x="835" y="725" text-anchor="middle">ja</text>
+
+  <!-- Q5 -> Q6 (down) -->
+  <line class="edge" x1="550" y1="710" x2="550" y2="770" marker-end="url(#arrow)"/>
+  <text class="no" x="565" y="745">nee</text>
+
+  <!-- LXC-A terminal -->
+  <rect class="lxc" x="780" y="770" width="280" height="78" rx="10"/>
+  <text class="terminal" x="920" y="797" text-anchor="middle" fill="#1b4332">Kies LXC unprivileged</text>
+  <text class="tag"      x="920" y="817" text-anchor="middle">+187% read-IOPS,</text>
+  <text class="tag"      x="920" y="833" text-anchor="middle">+44% DB-transacties/s</text>
+
+  <!-- Q6 -->
+  <rect class="question" x="370" y="770" width="360" height="80" rx="10"/>
+  <text class="label" x="550" y="798" text-anchor="middle">6. Veel kleine services en/of</text>
+  <text class="label" x="550" y="818" text-anchor="middle">RAM-druk op de host?</text>
+  <text class="tag"   x="550" y="838" text-anchor="middle">(DNS, reverse proxy, statische sites)</text>
+
+  <!-- Q6 -> LXC-B (left) -->
+  <line class="edge" x1="370" y1="810" x2="180" y2="910" marker-end="url(#arrow)"/>
+  <text class="yes" x="245" y="865" text-anchor="middle">ja</text>
+
+  <!-- Q6 -> Q7 (down) -->
+  <line class="edge" x1="550" y1="850" x2="550" y2="910" marker-end="url(#arrow)"/>
+  <text class="no" x="565" y="885">nee</text>
+
+  <!-- LXC-B terminal -->
+  <rect class="lxc" x="40" y="910" width="280" height="78" rx="10"/>
+  <text class="terminal" x="180" y="937" text-anchor="middle" fill="#1b4332">Kies LXC unprivileged</text>
+  <text class="tag"      x="180" y="957" text-anchor="middle">−73% RAM-overhead,</text>
+  <text class="tag"      x="180" y="973" text-anchor="middle">~4× meer instances per host</text>
+
+  <!-- Q7 -->
+  <rect class="question" x="370" y="910" width="360" height="80" rx="10"/>
+  <text class="label" x="550" y="938" text-anchor="middle">7. Snelle (auto)scaling of</text>
+  <text class="label" x="550" y="958" text-anchor="middle">snelle herstart belangrijk?</text>
+  <text class="tag"   x="550" y="978" text-anchor="middle">(elastische test- en CI/CD-omgeving)</text>
+
+  <!-- Q7 -> LXC-C (right) -->
+  <line class="edge" x1="730" y1="950" x2="900" y2="1050" marker-end="url(#arrow)"/>
+  <text class="yes" x="835" y="1005" text-anchor="middle">ja</text>
+
+  <!-- Q7 -> Default (down) -->
+  <line class="edge" x1="550" y1="990" x2="550" y2="1050" marker-end="url(#arrow)"/>
+  <text class="no" x="565" y="1025">nee</text>
+
+  <!-- LXC-C terminal -->
+  <rect class="lxc" x="780" y="1050" width="280" height="68" rx="10"/>
+  <text class="terminal" x="920" y="1078" text-anchor="middle" fill="#1b4332">Kies LXC unprivileged</text>
+  <text class="tag"      x="920" y="1098" text-anchor="middle">~28 s vs ~3,7 s boottijd</text>
+
+  <!-- Default terminal (LXC unpriv recommended) -->
+  <rect class="lxc" x="370" y="1050" width="360" height="80" rx="10"/>
+  <text class="terminal" x="550" y="1078" text-anchor="middle" fill="#1b4332">Default: LXC unprivileged</text>
+  <text class="tag"      x="550" y="1098" text-anchor="middle">cgroup-v2 + seccomp + user-namespace</text>
+  <text class="tag"      x="550" y="1116" text-anchor="middle">(privileged LXC enkel single-tenant en gemotiveerd)</text>
+
+  <!-- Footer legend -->
+  <rect class="vm"  x="80"  y="1180" width="120" height="26" rx="6"/>
+  <text class="tag" x="220" y="1198">Virtual Machine (KVM)</text>
+  <rect class="lxc" x="430" y="1180" width="120" height="26" rx="6"/>
+  <text class="tag" x="570" y="1198">LXC-container</text>
+  <rect class="question" x="780" y="1180" width="120" height="26" rx="6"/>
+  <text class="tag" x="920" y="1198">Beslissingsvraag</text>
+
+  <text x="550" y="1240" text-anchor="middle" font-size="12" fill="#555">Pijl-labels: ja gaat door naar de actie, nee zakt door naar de volgende vraag.</text>
+  <text x="550" y="1258" text-anchor="middle" font-size="11" fill="#888">Cijfers tussen percentages zijn empirisch gemeten in deze bachelorproef (n = 5, twee Pmx-versies).</text>
+</svg>

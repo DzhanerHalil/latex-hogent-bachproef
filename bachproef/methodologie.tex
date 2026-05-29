@@ -5,26 +5,183 @@
 \chapter{\IfLanguageName{dutch}{Methodologie}{Methodology}}%
 \label{ch:methodologie}
 
-%% TODO: In dit hoofstuk geef je een korte toelichting over hoe je te werk bent
-%% gegaan. Verdeel je onderzoek in grote fasen, en licht in elke fase toe wat
-%% de doelstelling was, welke deliverables daar uit gekomen zijn, en welke
-%% onderzoeksmethoden je daarbij toegepast hebt. Verantwoord waarom je
-%% op deze manier te werk gegaan bent.
-%% 
-%% Voorbeelden van zulke fasen zijn: literatuurstudie, opstellen van een
-%% requirements-analyse, opstellen long-list (bij vergelijkende studie),
-%% selectie van geschikte tools (bij vergelijkende studie, "short-list"),
-%% opzetten testopstelling/PoC, uitvoeren testen en verzamelen
-%% van resultaten, analyse van resultaten, ...
-%%
-%% !!!!! LET OP !!!!!
-%%
-%% Het is uitdrukkelijk NIET de bedoeling dat je het grootste deel van de corpus
-%% van je bachelorproef in dit hoofstuk verwerkt! Dit hoofdstuk is eerder een
-%% kort overzicht van je plan van aanpak.
-%%
-%% Maak voor elke fase (behalve het literatuuronderzoek) een NIEUW HOOFDSTUK aan
-%% en geef het een gepaste titel.
+Dit hoofdstuk beschrijft de onderzoeksmethodologie die werd gevolgd om de onderzoeksvragen uit Hoofdstuk~\ref{ch:inleiding} te beantwoorden. Het onderzoek werd opgebouwd uit vier opeenvolgende fasen, elk met duidelijke doelstellingen, onderzoekstechnieken en deliverables. De methodologie is zo opgezet dat het onderzoek reproduceerbaar is door andere onderzoekers of IT-beheerders. Alle scripts, configuratiebestanden en ruwe meetdata zijn opgenomen in de bijhorende repository.
 
-\lipsum[21-25]
+%%=============================================================================
+\section{Onderzoeksdesign}
+\label{sec:onderzoeksdesign}
 
+Dit onderzoek hanteert een gemengd onderzoeksdesign waarin kwantitatieve en kwalitatieve elementen elkaar aanvullen. De kwantitatieve component bestaat uit performantiemetingen voor CPU, geheugen, opslag, netwerk, opstarttijd en backupsnelheid in een gecontroleerde testomgeving. Deze leveren numerieke data op die statistisch worden vergeleken via tweezijdige $t$-tests. De kwalitatieve component beoordeelt beheerbaarheid, beveiligingsconfiguratie en isolatieniveau, en steunt op een interpretatieve analyse van de literatuur en de praktijkervaring tijdens de proof-of-concept.
+
+Het onderzoek is bovendien ontwerpgericht: het eindresultaat is niet louter een beschrijving van de huidige situatie, maar een concreet beslissingskader (\textit{decision tree}) dat IT-beheerders kunnen inzetten bij infrastructuurbeslissingen. Dit sluit aan bij de \textit{Design Science Research}-benadering, waarbij een artefact (het beslissingskader) wordt ontwikkeld en geëvalueerd op basis van empirische gegevens. Een puur kwantitatieve benadering zou de beveiligings- en beheeraspecten onvoldoende belichten, terwijl een puur kwalitatieve benadering de prestatievergelijking onvoldoende objectief zou onderbouwen.
+
+%%=============================================================================
+\section{Fase 1: Literatuurstudie (weken 1--3)}
+\label{sec:fase1-literatuurstudie}
+
+De eerste fase had als doel een grondig theoretisch kader op te bouwen dat als basis dient voor het verdere onderzoek. Deze fase beantwoordt voornamelijk deelvragen~1, 3 en~4 vanuit de bestaande literatuur. De systematische literatuursearch werd uitgevoerd in IEEE Xplore, ACM Digital Library, Google Scholar en arXiv met zoektermen als ``LXC containers performance'', ``KVM vs containers'', ``Proxmox virtualization comparison'', ``container security isolation'' en ``Proxmox backup LXC''. Vanuit relevante artikelen werden via de sneeuwbalmethode aanvullende bronnen geïdentificeerd. Daarnaast werden de officiële Proxmox-documentatie, release notes, changelogs en wiki-pagina's systematisch doorgenomen voor technische specificaties, en werden communityforums en technische blogs met expliciet auteurschap meegenomen als grijze literatuur.
+
+Voor de inclusie werden publicaties van de laatste tien jaar (2015--2025) weerhouden die VM's en/of containers vergelijken op het vlak van performance, beveiliging of management; Proxmox-specifieke documentatie werd opgenomen ongeacht publicatiedatum. Bronnen zonder duidelijk auteurschap, Wikipedia-artikelen en niet-geverifieerde blogposts werden uitgesloten, evenals studies die uitsluitend Docker in een Kubernetes-context behandelen zonder relevantie voor LXC of Proxmox. De fase resulteerde in de literatuurstudie van Hoofdstuk~\ref{ch:stand-van-zaken} (gebaseerd op meer dan twintig academische en technische bronnen), een overzicht van de technische verschillen tussen VM's en LXC-containers, een samenvatting van de relevante wijzigingen tussen Proxmox~8 en Proxmox~9, en een eerste set meetcriteria voor de proof-of-concept.
+
+%%=============================================================================
+\section{Fase 2: Requirements en testomgeving (weken 4--5)}
+\label{sec:fase2-requirements}
+
+In de tweede fase werden de vereisten voor de proof-of-concept vastgesteld en werd de testomgeving ingericht. In overleg met de promotor werden drie representatieve workloads geselecteerd op basis van de werkelijke services die het VIC aanbiedt: een webserver (Nginx) die zowel statische als dynamische inhoud serveert via PHP-FPM, een databaseserver (MariaDB) die lees- en schrijfoperaties afhandelt onder belasting, en een reverse proxy (Nginx op poort 8080) die verkeer doorstuurt naar een backend-webserver. Deze drie workloads dekken samen de typische gebruikspatronen van het VIC af.
+
+\subsection{Testomgeving}
+De testomgeving werd fysiek gehost op een Dell PowerEdge R440 met twee Intel\textregistered{} Xeon\textregistered{} Gold 6148 processoren en 128~GB RAM. Op deze server draait Proxmox VE~9 als hypervisor. Binnen deze Proxmox-installatie werden twee geneste Proxmox-VM's aangemaakt die fungeren als de eigenlijke testnodes (Tabel~\ref{tab:testomgeving}). Deze geneste opzet maakte het mogelijk om beide Proxmox-versies gelijktijdig te testen op identieke hardware, zonder dat een fysieke herinstallatie nodig was. De afwijking ten opzichte van de oorspronkelijke schijfgrootte van 30~GB  was nodig omdat \texttt{local-lvm} bij de standaardpartitionering slechts ~10~GB vrij liet, wat onvoldoende bleek voor één VM, één unprivileged LXC en één privileged LXC samen. De thin-pool werd na de schijfvergroting handmatig geherwaardeerd met \texttt{parted}, \texttt{pvresize} en \texttt{lvextend}.
+
+\begin{table}[h]
+    \centering
+    \caption[Specificaties testomgeving]{Specificaties van de testomgeving voor de proof-of-concept.}
+    \label{tab:testomgeving}
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Component} & \textbf{Specificatie} \\
+        \midrule
+        Fysieke host          & Dell PowerEdge R440 \\
+        CPU (fysiek)          & 2$\times$ Intel Xeon Gold 6148 (40 cores / 80 threads) \\
+        RAM (fysiek)          & 128~GB DDR4 ECC \\
+        Hypervisor host       & Proxmox VE 9.x \\
+        Testnode 1 (geneste VM) & Proxmox VE 8.x, 8 vCPU, 12~GB RAM, 80~GB disk \\
+        Testnode 2 (geneste VM) & Proxmox VE 9.x, 8 vCPU, 12~GB RAM, 80~GB disk \\
+        Backupserver          & PBS in unprivileged LXC, 4 vCPU, 8~GB RAM, 150~GB disk \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Per testnode werden drie guests uitgerold: een Ubuntu~24.04 LTS-VM (3 vCPU, 5~GB RAM, 20~GB disk), een unprivileged LXC met identieke specificaties, en een lichtere privileged LXC (1 vCPU, 1~GB RAM, 4~GB disk) die uitsluitend voor de beveiligingsvergelijking diende. De community-scripts \texttt{vm/ubuntu2404-vm.sh} en \texttt{ct/ubuntu.sh} werden gebruikt voor reproduceerbare deployment, gepind op commit \texttt{be81d62}. Voor de privileged LXC werd \texttt{pct create} rechtstreeks aangeroepen omdat het community-script standaard unprivileged containers maakt. Cloud-init zorgde voor de netwerkconfiguratie van de VM's; de LXC's werden via de Proxmox-template-CLI van een statisch IP voorzien. Binnen elke guest werden \texttt{setup\_tools.sh} (sysbench, fio, iperf3, stress-ng, wrk, \textit{amicontained}) en \texttt{setup\_workloads.sh} (Nginx, MariaDB, PHP-FPM, reverse proxy) uitgevoerd om de meetomgeving identiek te configureren. Na deze configuratie werd op elke guest een snapshot \texttt{baseline} gemaakt, die als clean reset-punt diende tussen meetiteraties.
+
+\subsection{Meetcriteria}
+Op basis van de literatuurstudie werden de meetcriteria vastgelegd zoals samengevat in Tabel~\ref{tab:meetcriteria}. Naast de oorspronkelijke metrieken werden tijdens de uitvoering ook \texttt{wrk} (HTTP-belasting op de webserver en reverse proxy) en \texttt{sysbench oltp\_read\_write} (databaselasting) toegevoegd om de drie representatieve workloads ook op applicatieniveau te kunnen meten. Aan de hostzijde werden tijdens elke meting \texttt{iostat}, \texttt{vmstat} en \texttt{mpstat} parallel gedraaid om hypervisor-overhead en I/O-context vast te leggen.
+
+\begin{table}[h]
+    \centering
+    \caption[Meetcriteria PoC]{Overzicht van meetcriteria voor de proof-of-concept.}
+    \label{tab:meetcriteria}
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Categorie} & \textbf{Metriek} & \textbf{Tool} \\
+        \midrule
+        CPU-performance        & Bewerkingen per seconde   & \texttt{sysbench cpu} \\
+        Geheugendoorvoer       & MB/s read/write           & \texttt{sysbench memory} \\
+        Idle RAM-overhead      & MB in rust                & \texttt{/proc/meminfo} \\
+        Disk I/O               & IOPS, bandbreedte         & \texttt{fio} (4K random RW) \\
+        Netwerk I/O            & Bandbreedte, jitter       & \texttt{iperf3} TCP en UDP \\
+        Webserver              & Requests/s, latency       & \texttt{wrk} \\
+        Database               & Transacties/s             & \texttt{sysbench oltp\_read\_write} \\
+        Opstarttijd            & Tijd tot HTTP 200         & \texttt{date}-based scripting \\
+        Backupsnelheid         & Duur full / incrementeel  & PBS, \texttt{vzdump} \\
+        Restore-snelheid       & Duur tot operationeel     & PBS, \texttt{qmrestore} / \texttt{pct restore} \\
+        Backupgrootte          & Grootte in MB/GB          & PBS \\
+        Host-overhead          & CPU/IO tijdens benchmark  & \texttt{iostat}, \texttt{vmstat}, \texttt{mpstat} \\
+        Beveiliging            & Capabilities, namespaces  & \texttt{amicontained}, \texttt{capsh} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+%%=============================================================================
+\section{Fase 3: Proof-of-concept en metingen (weken 6--10)}
+\label{sec:fase3-poc}
+
+In deze fase werden de praktische testen uitgevoerd. Dezelfde workloads werden opgezet als VM en als LXC-container op zowel Proxmox~8 als Proxmox~9, wat een binnen-groepen design (\textit{within-subjects design}) oplevert met vier condities: VM op Proxmox~8, LXC-container op Proxmox~8, VM op Proxmox~9 en LXC-container op Proxmox~9. Elke prestatie- en boot-meting werd vijf keer herhaald in plaats van de oorspronkelijk geplande drie. Deze ophoging was een bewuste methodologische keuze om tweezijdige $t$-tests met een ondergrens van $n=5$ correct te kunnen toepassen tijdens de analyse (Sectie~\ref{sec:fase4-analyse}). Tussen elke iteratie werd de testomgeving via \texttt{qm rollback} of \texttt{pct rollback} teruggebracht naar de baseline-snapshot om vervuiling van de meetresultaten te vermijden.
+
+\subsection{Performance-tests}
+De CPU-prestaties werden gemeten met \texttt{sysbench cpu} bij zowel één als vier threads, telkens 60~seconden lang met \texttt{cpu-max-prime=20000}. Het geheugen werd belast met \texttt{sysbench memory} (1~MB blokken, 100~GB totale doorvoer, write-modus). De idle RAM-overhead werd vóór elke run vastgelegd via \texttt{/proc/meminfo}, eveneens uit \texttt{vmstat}-samples. De opslag-I/O werd gekarakteriseerd met \texttt{fio} in een random read/write pattern (70/30 ratio, 4K blokken, queue-depth 32, \texttt{libaio}, \texttt{direct=1}, 60~seconden). De netwerkbandbreedte werd gemeten met \texttt{iperf3} (TCP en UDP, telkens 15~seconden) waarbij de Proxmox-host als server fungeerde via een persistente \texttt{systemd}-unit. Voor de webserver werd \texttt{wrk} ingezet (2 threads, 50 connecties, 30~seconden) op zowel het statische bestand, het PHP-script (CPU-loop met 500~000 vierkantswortels) als de reverse-proxy. De databaseserver werd belast met \texttt{sysbench oltp\_read\_write} (4 tabellen, 10~000 rijen, 4 threads, 60~seconden). De opstarttijd werd vanaf de Proxmox-host gemeten als het tijdsinterval tussen \texttt{qm start} of \texttt{pct start} en het eerste HTTP~200-antwoord op de Nginx-statische testpagina, met een poll-interval van 100~ms.
+
+\subsection{Backup- en restore-tests}
+Backups werden uitgevoerd via Proxmox Backup Server in een afzonderlijke unprivileged LXC (CT~115) op de outer-hypervisor. PBS werd geconfigureerd met één datastore (\texttt{bp-store}) en bereikbaar voor pve8 en pve9 via een API-token met privilege-separation uitgeschakeld. De atime-cutoff voor garbage collection werd op 1~minuut gezet om snapshots tussen testiteraties effectief te kunnen opruimen.
+
+Voor elke run werd in de guest een willekeurig databestand gegenereerd met \texttt{dd if=/dev/urandom}. De oorspronkelijke ambitie van een 5~GB- en 50~GB-dataset werd, omwille van de schijfruimte in de geneste opzet (88~GB thin-pool oversubscribed op een 79,5~GB volume group), aangepast naar 5~GB en 12~GB. De verhouding klein:groot is daardoor 1:2,4 in plaats van de oorspronkelijke 1:10. Dit verschil is gedocumenteerd als limitatie in Sectie~\ref{sec:beperkingen-validatie}, maar tast de relatieve schaalvergelijking tussen VM en LXC niet aan: de file-level versus block-level mechanismen blijven zichtbaar in beide datagroottes. Per iteratie werd een full backup (\texttt{vzdump --mode snapshot --compress zstd}) uitgevoerd, gevolgd door een delta van 100~MB en een incrementele backup, en vervolgens een restore naar een tijdelijke ID (600 voor pve8, 700 voor pve9). Na de restore werd de tijdelijke kopie verwijderd en werden alle PBS-snapshots voor die VMID via \texttt{pvesm free} verwijderd. Iedere vier iteraties werd op de PBS-LXC een garbage-collection getriggerd om de chunk-store leeg te houden.
+
+\subsection{Beveiligingstests}
+Per virtualisatietype werd één gestructureerde audit uitgevoerd in elke guest met behulp van \textit{amicontained}, \texttt{capsh}, \texttt{/proc/self/status} en \texttt{stress-ng}. De audit registreert het detected runtime-type, de actieve namespaces (waaronder de cruciale \texttt{user}-namespace bij unprivileged LXC), het AppArmor-profiel, de bounding capabilities en het seccomp-filter. Daarnaast werd een cgroup-doorbraak-test uitgevoerd waarbij \texttt{stress-ng} bewust meer geheugen probeerde te alloceren dan het toegekende cgroup-quotum, en werd de toegang tot block-devices vanuit de container gecontroleerd. Voor VM's werd het stress-ng-luik niet uitgevoerd omdat de RAM-grens daar door QEMU op hardware-niveau wordt afgedwongen en niet door cgroups, waardoor het concept niet van toepassing is. De zes audits (drie types op twee Proxmox-versies) leverden samen het bewijsmateriaal voor het isolatie-onderscheid in de decision tree.
+
+\subsection{Reproduceerbaarheid en automatisering}
+Alle scripts werden in een Git-repository bijgehouden en op beide testnodes (en de PBS-LXC) op identieke locaties gedeployed. De volledige meet-cyclus werd via wrapper-scripts (\texttt{run\_iteration.sh}, \texttt{run\_cycle\_pmx8.sh}, \texttt{run\_backup\_iteration.sh}) geautomatiseerd: rollback naar baseline, start guest, host-monitor in achtergrond, benchmark uitvoeren, resultaten via \texttt{tar} en \texttt{base64} naar de host trekken, en guest stoppen. Een aparte helper (\texttt{deploy\_to\_guest.sh}) zorgde voor het pushen van scripts in zowel VM's (via \texttt{qm guest exec} met base64-encoding over de QEMU guest agent) als LXC's (via \texttt{pct push}). Tijdens de uitrol werden enkele technische hindernissen aangepakt en gedocumenteerd: een instabiele QEMU guest agent op één van de VM's (opgelost door reinstall en expliciete \texttt{systemctl enable}), een niet-gerepliceerde \texttt{pct stop}-flush op Pmx~9 die snapshots zonder de gepushte scripts produceerde (opgelost door graceful \texttt{shutdown} via QGA voor \texttt{qm snapshot}), en een PBS-datastore die tijdens een eerste run vol liep doordat het script de snapshots niet meteen prunde (opgelost door een \texttt{[8/8] PBS prune}-stap toe te voegen aan elke iteratie). Deze hindernissen zijn relevant voor reproduceerbaarheid en worden expliciet beschreven in Sectie~\ref{sec:reproduceerbaarheid-implementatie}.
+
+%%=============================================================================
+\section{Fase 4: Analyse en advies (weken 11--14)}
+\label{sec:fase4-analyse}
+
+In de laatste fase werden de resultaten uit fase~3 geanalyseerd, gekoppeld aan de literatuurbevindingen uit fase~1, en vertaald naar concrete aanbevelingen voor het VIC. Deze fase beantwoordt deelvragen~6 tot en met~9. De ruwe data uit alle iteraties werden via een Python-script (\texttt{scripts/analyze.py}) ingelezen en samengebracht in vier geaggregeerde CSV-bestanden in \texttt{data/}. De parsers verwerken de output van \texttt{sysbench}, JSON van \texttt{fio} en \texttt{iperf3}, tekstoutput van \texttt{wrk}, idle-data uit \texttt{/proc/meminfo} en de boot- en backup-CSV's. Per metriek werden gemiddelde, standaarddeviatie en aantal observaties berekend per omgeving, en werden tweezijdige $t$-tests uitgevoerd om VM en LXC binnen elke Proxmox-versie te vergelijken op een significantieniveau van $\alpha = 0,05$. De resultaten werden gevisualiseerd met boxplots (per metriek) en barplots met error bars (voor de backupfasen).
+
+De kwalitatieve analyse vergelijkt de \textit{amicontained}-output van de drie types per Proxmox-versie. De bevindingen worden gecategoriseerd per thema (isolatie, beheergemak, compatibiliteit) en getrianguleerd met de literatuurbevindingen uit Sectie~\ref{sec:beveiliging-isolatie}. Op basis van de gecombineerde kwantitatieve en kwalitatieve analyse werd het beslissingskader (\textit{decision tree}, Figuur~\ref{fig:decision_tree}) opgesteld. Dit kader vertaalt de empirische verschillen in concrete keuzeregels op basis van workload-eigenschappen: type besturingssysteem, kernel-vereisten, multi-tenancy, datagrootte, backup-frequentie, I/O-intensiteit en RAM-druk.
+
+%%=============================================================================
+\section{Software, tools en repository}
+\label{sec:software-tools}
+
+Tabel~\ref{tab:tools} geeft een overzicht van de software en tools die in dit onderzoek werden ingezet. Alle bash- en Python-scripts staan in de map \texttt{scripts/} van de repository (inclusief \texttt{run\_benchmarks.sh}, \texttt{run\_backup\_iteration.sh}, \texttt{run\_security\_tests.sh}, \texttt{measure\_boot.sh} en \texttt{analyze.py}). De ruwe en geaggregeerde meetdata staan in \texttt{data/}; de gegenereerde grafieken in \texttt{graphics/analysis/}.
+
+\begin{table}[h]
+    \centering
+    \caption[Gebruikte software en tools]{Overzicht van software en tools per onderzoeksfase.}
+    \label{tab:tools}
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Fase} & \textbf{Tool} & \textbf{Doel} \\
+        \midrule
+        1   & Google Scholar, IEEE Xplore & Literatuursearch \\
+        1   & JabRef / Zotero            & Bibliografiebeheer \\
+        2--3& Proxmox VE 8.x en 9.x     & Virtualisatieplatform \\
+        2--3& Proxmox Backup Server      & Backup en restore \\
+        3   & \texttt{sysbench}          & CPU-, geheugen- en OLTP-benchmarks \\
+        3   & \texttt{fio}               & Disk I/O-benchmarks \\
+        3   & \texttt{iperf3}            & Netwerkbenchmarks \\
+        3   & \texttt{wrk}               & HTTP-belastingstest \\
+        3   & \texttt{stress-ng}         & Cgroup-grenzen test \\
+        3   & \textit{amicontained}      & Container-introspectie \\
+        3   & \texttt{iostat}, \texttt{vmstat}, \texttt{mpstat} & Host-monitoring \\
+        4   & Python (pandas, scipy, seaborn) & Statistische analyse en grafieken \\
+        4   & \LaTeX{}                   & Rapportage \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+%%=============================================================================
+\section{Validiteit, betrouwbaarheid en bias-reductie}
+\label{sec:validiteit}
+
+\subsection{Interne validiteit}
+Om te garanderen dat de gemeten verschillen daadwerkelijk toe te schrijven zijn aan het verschil tussen VM en LXC, en niet aan externe factoren, werden alle tests uitgevoerd op dezelfde fysieke hardware met dezelfde OS-versie en dezelfde softwareconfiguratie. Elke meting werd vijf keer herhaald, en tussen tests werd de omgeving via \texttt{baseline}-snapshots hersteld naar een schone toestand. Per test werd slechts één variabele gewijzigd: VM versus LXC, of Proxmox~8 versus~9. De community-scripts werden gepind op een specifieke commit-hash zodat geen drift ontstaat tussen latere deployments.
+
+\subsection{Externe validiteit}
+\label{sec:beperkingen-validatie}
+De testomgeving is een geneste virtualisatieopstelling op een Dell PowerEdge R440 en niet de productieomgeving van het VIC. Dit beperkt de directe generaliseerbaarheid van de absolute meetwaarden: netwerkbandbreedte, schijf-IOPS en backupduur worden mede begrensd door de geneste bridge en thin-LVM stack. De \emph{relatieve} verschillen tussen VM en LXC blijven echter geldig, omdat het meetpad voor beide condities identiek is. De workloads werden zo representatief mogelijk gekozen in overleg met het VIC. Alle beperkingen van de testopstelling zijn expliciet gedocumenteerd, en aanbevelingen worden geformuleerd met de kanttekening dat validatie in de productieomgeving wenselijk is. De ``large''-dataset bedraagt 12~GB in plaats van de oorspronkelijk geplande 50~GB, omdat de thin-LVM-pool van de geneste testnodes onvoldoende ruimte bood voor 50~GB live data plus een volledige restore-kopie. De verhouding (1:2,4 ipv 1:10) is voldoende om de schaalrichting van VM en LXC te observeren.
+
+\subsection{Betrouwbaarheid}
+\label{sec:reproduceerbaarheid-implementatie}
+Alle meetscripts, configuratiebestanden en ruwe data worden bijgehouden in een Git-repository. De testprocedure is zo gedetailleerd gedocumenteerd dat replicatie door derden mogelijk is, inclusief de aangepaste cycle-scripts (\texttt{run\_cycle\_pmx8.sh}, \texttt{run\_backup\_iteration.sh}) en de bijhorende uitgaande logs. Tussentijdse resultaten werden besproken met de promotor en co-promotor. Tijdens de uitvoering werden enkele praktische hindernissen vastgelegd die voor reproductie relevant zijn. De QEMU guest agent moest in de Ubuntu cloud-image expliciet \texttt{enabled} en \texttt{started} worden via een eenmalige login over SSH; zonder die stap viel de agent na de eerste rollback weg. De combinatie \texttt{qm stop} gevolgd door \texttt{qm snapshot} bleek op Proxmox~9 niet altijd de meest recente filesystem-writes te flushen; vervangen door een \texttt{shutdown -h now} via QGA loste dit op. Tot slot werd de prune-stap (\texttt{[8/8] PBS prune}) toegevoegd aan elke backup-iteratie nadat een eerste run de PBS-datastore volliep door de combinatie van pseudorandom payload (geen dedup) en de standaard 24-uurs atime-grace.
+
+\subsection{Bias-reductie}
+De onderzoeker is zich bewust van een mogelijke voorkeur voor LXC-containers, gegeven de potentiële efficiëntiewinsten, en documenteert nadrukkelijk ook de nadelen en beperkingen, zoals de file-level backupkost en het verzwakte isolatieprofiel ten opzichte van VM's. De gekozen workloads werden verantwoord op basis van de werkelijke services van het VIC en niet op basis van scenario's die één technologie zouden bevoordelen. De statistische tests gebruiken een tweezijdige hypothese, zonder vooraf opgelegde richting, en de significantiedrempel van $\alpha = 0,05$ werd vóór de analyse vastgelegd.
+
+%%=============================================================================
+\section{Ethische overwegingen}
+\label{sec:ethische-overwegingen}
+
+Dit onderzoek maakt geen gebruik van persoonlijke data van individuen. De testomgeving bevat uitsluitend synthetische data en testworkloads. Daarom zijn er geen GDPR-implicaties en is goedkeuring door een ethische commissie niet vereist. Indien in een latere fase interviews worden afgenomen met VIC-beheerders, zal informed consent worden gevraagd en zullen de gegevens geanonimiseerd worden verwerkt.
+
+%%=============================================================================
+\section{Planning}
+\label{sec:planning}
+
+Het onderzoek liep over veertien weken, waarbij minimaal één dag per week aan de bachelorproef werd besteed. De planning is samengevat in Tabel~\ref{tab:planning}.
+
+\begin{table}[h]
+    \centering
+    \caption[Planning onderzoek]{Tijdsplanning van het onderzoek per fase.}
+    \label{tab:planning}
+    \begin{tabular}{clp{7cm}}
+        \toprule
+        \textbf{Week} & \textbf{Fase} & \textbf{Activiteiten} \\
+        \midrule
+        1--3  & Literatuurstudie       & Bronnen verzamelen, analyseren en synthetiseren; theoretisch kader opstellen; meetcriteria definiëren \\
+        4--5  & Requirements \& setup   & Workloads selecteren; testomgeving inrichten; testscripts voorbereiden \\
+        6--10 & PoC \& metingen         & Services deployen als VM en LXC; benchmarks uitvoeren; backuptests; beveiligingsevaluatie \\
+        11--14& Analyse \& advies       & Resultaten verwerken; beslissingskader opstellen; adviesrapport schrijven; eindtekst bachelorproef \\
+        \bottomrule
+    \end{tabular}
+\end{table}

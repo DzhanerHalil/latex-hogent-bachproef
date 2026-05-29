@@ -5,46 +5,98 @@
 \chapter{\IfLanguageName{dutch}{Inleiding}{Introduction}}%
 \label{ch:inleiding}
 
-De inleiding moet de lezer net genoeg informatie verschaffen om het onderwerp te begrijpen en in te zien waarom de onderzoeksvraag de moeite waard is om te onderzoeken. In de inleiding ga je literatuurverwijzingen beperken, zodat de tekst vlot leesbaar blijft. Je kan de inleiding verder onderverdelen in secties als dit de tekst verduidelijkt. Zaken die aan bod kunnen komen in de inleiding~\autocite{Pollefliet2011}:
+%% Context en achtergrond
+Virtualisatie vormt een belangrijk onderdeel van moderne IT-infrastructuren en stelt organisaties in staat om fysieke hardware efficiënt te gebruiken door meerdere geïsoleerde omgevingen op één platform te draaien. Binnen onderwijsinstellingen, waar budgetten beperkt zijn en de vraag naar flexibele IT-omgevingen groot is, speelt virtualisatie een bijzonder belangrijke rol. Het Virtual IT Company (VIC) van HOGENT is hier een concreet voorbeeld van: het VIC biedt verschillende services aan, van webservers en databases tot testomgevingen voor studenten en projecten, die allemaal draaien op een Proxmox Virtual Environment (Proxmox VE) infrastructuur~\autocite{ProxmoxDocs}.
 
-\begin{itemize}
-  \item context, achtergrond
-  \item afbakenen van het onderwerp
-  \item verantwoording van het onderwerp, methodologie
-  \item probleemstelling
-  \item onderzoeksdoelstelling
-  \item onderzoeksvraag
-  \item \ldots
-\end{itemize}
+Proxmox VE is een open-source virtualisatieplatform dat zowel klassieke virtual machines (VM's) op basis van KVM als Linux containers (LXC) ondersteunt~\autocite{ProxmoxWiki}. Hoewel beide technologieën naast elkaar beschikbaar zijn, maakt het VIC momenteel uitsluitend gebruik van VM's voor het aanbieden van al zijn services. VM's bieden een hoge mate van isolatie doordat elke VM een volledig besturingssysteem met een eigen kernel draait bovenop een hypervisor. Dit brengt echter ook aanzienlijke overhead met zich mee in termen van geheugengebruik, CPU-belasting en opstarttijd~\autocite{Felter2015, Sharma2016}.
 
+De opkomst van containerisatietechnologieën, waaronder LXC en Docker, heeft een alternatieve aanpak mogelijk gemaakt die in bepaalde scenario's grote voordelen kan bieden. LXC-containers delen de kernel van de host en maken gebruik van Linux-kernelmechanismen zoals \textit{namespaces} en \textit{cgroups} om processen en resources te isoleren~\autocite{Merkel2014}. Hierdoor hebben zij doorgaans een aanzienlijk lagere overhead dan VM's: waar een VM gemiddeld 250--500~MB RAM-overhead kent, kan een LXC-container functioneren met een overhead van slechts 10--50~MB~\autocite{LogicWeb2025}. Bovendien starten LXC-containers op in enkele seconden, terwijl VM's hiervoor 10 tot 60 seconden kunnen vereisen~\autocite{TechOpt2025}.
+
+Met de toenemende druk op IT-budgetten en de groeiende vraag naar schaalbare, efficiënte infrastructuuroplossingen rijst de vraag of het VIC kan profiteren van een (gedeeltelijke) overstap van VM's naar LXC-containers. Daarnaast speelt de recente release van Proxmox~9 een rol: deze versie introduceert verbeteringen specifiek gericht op LXC-containers, waaronder een geüpdatete LXC-versie en betere cgroup~v2-integratie~\autocite{Xtom2025}. Het VIC draait momenteel op Proxmox~8 en overweegt of een upgrade voordelen kan opleveren.
+
+%%=============================================================================
 \section{\IfLanguageName{dutch}{Probleemstelling}{Problem Statement}}%
 \label{sec:probleemstelling}
 
-Uit je probleemstelling moet duidelijk zijn dat je onderzoek een meerwaarde heeft voor een concrete doelgroep. De doelgroep moet goed gedefinieerd en afgelijnd zijn. Doelgroepen als ``bedrijven,'' ``KMO's'', systeembeheerders, enz.~zijn nog te vaag. Als je een lijstje kan maken van de personen/organisaties die een meerwaarde zullen vinden in deze bachelorproef (dit is eigenlijk je steekproefkader), dan is dat een indicatie dat de doelgroep goed gedefinieerd is. Dit kan een enkel bedrijf zijn of zelfs één persoon (je co-promotor/opdrachtgever).
+\textcolor{red}{\textbf{Probleemstelling}}
 
+Binnen het VIC van HOGENT ontbreekt momenteel een onderbouwd inzicht in de functionele en technische verschillen tussen VM's en LXC-containers op het Proxmox-platform. Het VIC draait al zijn services (webservers, databaseservers, DNS-servers, reverse proxies en studentenomgevingen) uitsluitend op klassieke VM's. Elke VM vereist een volledige installatie van het besturingssysteem inclusief kernel, wat leidt tot een aanzienlijke overhead per service.
+
+\textbf{Wie} wordt getroffen? De IT-beheerders van het VIC, die verantwoordelijk zijn voor het ontwerp, beheer en de optimalisatie van de virtualisatie-infrastructuur, alsook de eindgebruikers (studenten en docenten) die afhankelijk zijn van de beschikbaarheid en prestaties van de aangeboden services.
+
+\textbf{Wat} is het probleem? Er is geen beslissingskader beschikbaar dat aangeeft wanneer een LXC-container de voorkeur verdient boven een VM, of omgekeerd. Dit leidt tot mogelijk minder goed gebruik van de beschikbare hardwareresources.
+
+\textbf{Waar} manifesteert het probleem zich? In de Proxmox VE-omgeving van het VIC aan HOGENT, waar alle services op VM's draaien terwijl LXC-containers mogelijk een efficiënter alternatief bieden voor bepaalde workloads.
+
+\textbf{Wanneer} is het relevant? Nu, aangezien het VIC groeit in het aantal aangeboden services en de beschikbare hardware niet evenredig meegroeit. Bovendien is de release van Proxmox~9 een geschikt moment om de keuzes rond de infrastructuur opnieuw te bekijken.
+
+\textbf{Waarom} is het urgent? Zonder een onderbouwde analyse mist het VIC mogelijke efficiëntiewinsten en blijft het risico bestaan dat hardware onnodig belast wordt. Daarnaast zijn er toekomstplannen voor de integratie van Kubernetes, waarvoor een goed begrip van de relatie tussen LXC-containers, application containers en orchestratieplatformen essentieel is.
+
+\textbf{Hoe} manifesteert het probleem zich? In de praktijk uit zich dit in een hoger geheugen- en CPU-verbruik per service dan nodig, langere provisioneringstijden voor nieuwe omgevingen en een gebrek aan duidelijke richtlijnen voor infrastructuurbeslissingen.
+
+%%=============================================================================
 \section{\IfLanguageName{dutch}{Onderzoeksvraag}{Research question}}%
 \label{sec:onderzoeksvraag}
 
-Wees zo concreet mogelijk bij het formuleren van je onderzoeksvraag. Een onderzoeksvraag is trouwens iets waar nog niemand op dit moment een antwoord heeft (voor zover je kan nagaan). Het opzoeken van bestaande informatie (bv. ``welke tools bestaan er voor deze toepassing?'') is dus geen onderzoeksvraag. Je kan de onderzoeksvraag verder specifiëren in deelvragen. Bv.~als je onderzoek gaat over performantiemetingen, dan 
+\textcolor{red}{\textbf{Onderzoeksvragen}}
 
+De hoofdonderzoeksvraag van dit onderzoek luidt:
+
+\begin{quote}
+\textit{In welke mate kan het VIC van HOGENT profiteren van het inzetten van LXC-containers op Proxmox in plaats van klassieke VM's, rekening houdend met performance, beveiliging, management en toekomstige uitbreidingsmogelijkheden zoals Kubernetes?}
+\end{quote}
+
+Om deze hoofdvraag systematisch te beantwoorden, worden de volgende deelvragen geformuleerd.
+
+\textcolor{red}{\textbf{Deelvragen probleemdomein:}}
+
+\begin{enumerate}
+    \item Wat zijn de belangrijkste functionele en technische verschillen tussen VM's en LXC-containers binnen Proxmox?
+    \item Welke impact heeft de keuze tussen VM's en LXC-containers op performance (CPU, geheugen, opstarttijd), resource-usage en schaalbaarheid?
+    \item Welke beveiligingsimplicaties zijn er verbonden aan het gebruik van VM's versus LXC-containers, specifiek op het vlak van isolatie tussen klantomgevingen?
+    \item Wat zijn de relevante verschillen tussen Proxmox~8 en Proxmox~9 op het vlak van LXC-containers en hun functionaliteiten?
+    \item Op welke wijze ondersteunt Proxmox Backup Server de backup van VM's en LXC-containers, en wat zijn de verschillen in betrouwbaarheid en restoretijd?
+\end{enumerate}
+
+\textcolor{red}{\textbf{Deelvragen oplossingsdomein:}}
+
+\begin{enumerate}[resume]
+    \item Welke scenario's of use-cases binnen het VIC zijn beter geschikt voor het gebruik van LXC-containers dan voor VM's, of omgekeerd?
+    \item Wat zijn de best practices voor het opzetten, beheren en beveiligen van LXC-containers in productieomgevingen zoals het VIC?
+    \item Hoe verhoudt het gebruik van LXC-containers zich tot de toekomstige plannen voor de implementatie van Kubernetes binnen het VIC?
+    \item Welke richtlijnen helpen IT-beheerders bij het kiezen van de juiste technologie (VM of LXC) voor specifieke workloads?
+\end{enumerate}
+
+%%=============================================================================
 \section{\IfLanguageName{dutch}{Onderzoeksdoelstelling}{Research objective}}%
 \label{sec:onderzoeksdoelstelling}
 
-Wat is het beoogde resultaat van je bachelorproef? Wat zijn de criteria voor succes? Beschrijf die zo concreet mogelijk. Gaat het bv.\ om een proof-of-concept, een prototype, een verslag met aanbevelingen, een vergelijkende studie, enz.
+Het doel van dit onderzoek bestaat uit drie delen en wordt vertaald naar concrete, meetbare resultaten.
 
+De \textbf{hoofddoelstelling} is het ontwikkelen van een wetenschappelijk onderbouwd adviesrapport voor het VIC van HOGENT, dat IT-beheerders in staat stelt onderbouwde keuzes te maken tussen VM's en LXC-containers voor specifieke services op het Proxmox-platform.
+
+De \textbf{specifieke doelstellingen}, gekoppeld aan de deelvragen, zijn:
+
+\begin{enumerate}
+    \item \textit{(Deelvragen 1--5)} Een gedetailleerd vergelijkend overzicht opstellen van de technische, performantie-, beveiligings- en backupverschillen tussen VM's en LXC-containers op Proxmox~8 en Proxmox~9. Dit overzicht wordt opgesteld op basis van literatuurstudie en eigen metingen, en is beschikbaar tegen het einde van fase~3 (week~10).
+    \item \textit{(Deelvragen 6--7)} Een proof-of-concept (PoC) realiseren waarin representatieve VIC-workloads (webserver, database, reverse proxy) zowel als VM als LXC-container worden opgezet en getest op meetbare criteria (CPU-gebruik, geheugenverbruik, opstarttijd, I/O-prestaties, backupsnelheid). De PoC wordt uitgevoerd op Proxmox~8 en Proxmox~9 in een gecontroleerde testomgeving.
+    \item \textit{(Deelvragen 8--9)} Een praktisch beslissingskader (decision tree) ontwikkelen dat per type workload aangeeft of een VM dan wel een LXC-container de aangewezen technologie is, rekening houdend met de toekomstplannen rond Kubernetes.
+\end{enumerate}
+
+Deze doelstellingen zijn \textbf{SMART} geformuleerd: ze zijn specifiek (gericht op het VIC en Proxmox), meetbaar (kwantitatieve benchmarks en kwalitatieve evaluatie), acceptabel (afgestemd met de promotor en co-promotor), realistisch (uitvoerbaar binnen de beschikbare 14 weken en met een dedicated testserver) en tijdgebonden (gekoppeld aan de fasenplanning van het onderzoek).
+
+%%=============================================================================
 \section{\IfLanguageName{dutch}{Opzet van deze bachelorproef}{Structure of this bachelor thesis}}%
 \label{sec:opzet-bachelorproef}
 
-% Het is gebruikelijk aan het einde van de inleiding een overzicht te
-% geven van de opbouw van de rest van de tekst. Deze sectie bevat al een aanzet
-% die je kan aanvullen/aanpassen in functie van je eigen tekst.
-
 De rest van deze bachelorproef is als volgt opgebouwd:
 
-In Hoofdstuk~\ref{ch:stand-van-zaken} wordt een overzicht gegeven van de stand van zaken binnen het onderzoeksdomein, op basis van een literatuurstudie.
+In Hoofdstuk~\ref{ch:stand-van-zaken} wordt een uitgebreide literatuurstudie gepresenteerd die de theoretische basis legt voor het onderzoek. Hierin worden de kernconcepten virtualisatie, containerisatie, LXC, Proxmox VE, beveiliging en isolatie, backupstrategieën, versieverschillen tussen Proxmox~8 en~9 en de relatie met Kubernetes besproken op basis van academische en technische bronnen.
 
-In Hoofdstuk~\ref{ch:methodologie} wordt de methodologie toegelicht en worden de gebruikte onderzoekstechnieken besproken om een antwoord te kunnen formuleren op de onderzoeksvragen.
+In Hoofdstuk~\ref{ch:methodologie} wordt de methodologie toegelicht. Het onderzoeksdesign, de dataverzamelingsmethoden, de testopstelling en de analysemethoden worden in detail beschreven, zodat het onderzoek reproduceerbaar is.
 
-% TODO: Vul hier aan voor je eigen hoofstukken, één of twee zinnen per hoofdstuk
+%% TODO: Voeg hier extra hoofdstukken toe wanneer de PoC-resultaten beschikbaar zijn:
+%% In Hoofdstuk~X worden de resultaten van de proof-of-concept gepresenteerd...
+%% In Hoofdstuk~Y wordt het beslissingskader uitgewerkt...
 
 In Hoofdstuk~\ref{ch:conclusie}, tenslotte, wordt de conclusie gegeven en een antwoord geformuleerd op de onderzoeksvragen. Daarbij wordt ook een aanzet gegeven voor toekomstig onderzoek binnen dit domein.

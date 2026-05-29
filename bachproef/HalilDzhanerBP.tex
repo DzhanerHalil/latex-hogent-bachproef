@@ -13,6 +13,12 @@
 
 \usepackage{lipsum} % For blind text, can be removed after adding actual content
 
+%% SVG support for the decision tree (requires Inkscape; works on Overleaf)
+\usepackage{svg}
+
+%% Booktabs for nicer tables (\toprule, \midrule, \bottomrule, \cmidrule)
+\usepackage{booktabs}
+
 %% Pictures to include in the text can be put in the graphics/ folder
 \graphicspath{{../graphics/}}
 
@@ -48,17 +54,15 @@
 % Other packages not already included can be imported here
 
 %%---------- Document metadata -------------------------------------------------
-% TODO: Replace this with your own information
-\author{Ernst Aarden}
-\supervisor{Dhr. F. Van Houte}
-\cosupervisor{Mevr. S. Beeckman}
-\title[Optionele ondertitel]%
-    {Titel van de bachelorproef}
-\academicyear{\advance\year by -1 \the\year--\advance\year by 1 \the\year}
+\author{Dzhaner Halil}
+\supervisor{Alexander Veldeman}
+\cosupervisor{Robyn Moreno (Excentis)}
+\title{Evaluatie van LXC-containers als alternatief voor klassieke VM's op Proxmox binnen het VIC}
+\academicyear{2025-2026}
 \examperiod{1}
 \degreesought{\IfLanguageName{dutch}{Professionele bachelor in de toegepaste informatica}{Bachelor of applied computer science}}
 \partialthesis{false} %% To display 'in partial fulfilment'
-%\institution{Internshipcompany BVBA.}
+%\institution{Excentis}
 
 %% Add global exceptions to the hyphenation here
 \hyphenation{back-slash}
@@ -114,7 +118,7 @@
 % lines.
 \listoftables
 
-\listoflistings
+%\listoflistings
 
 % Als je een lijst van afkortingen of termen wil toevoegen, dan hoort die
 % hier thuis. Gebruik bijvoorbeeld de ``glossaries'' package.
@@ -133,15 +137,7 @@
 \input{inleiding}
 \input{standvanzaken}
 \input{methodologie}
-
-% Voeg hier je eigen hoofdstukken toe die de ``corpus'' van je bachelorproef
-% vormen. De structuur en titels hangen af van je eigen onderzoek. Je kan bv.
-% elke fase in je onderzoek in een apart hoofdstuk bespreken.
-
-%\input{...}
-%\input{...}
-%...
-
+\input{resultaten}
 \input{conclusie}
 
 %---------- Bijlagen -----------------------------------------------------------

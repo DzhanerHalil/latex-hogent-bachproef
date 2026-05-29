@@ -1,0 +1,7 @@
+,cpu_1t_eps,cpu_1t_eps,cpu_1t_eps,cpu_4t_eps,cpu_4t_eps,cpu_4t_eps,mem_mibs,mem_mibs,mem_mibs,fio_read_iops,fio_read_iops,fio_read_iops,fio_write_iops,fio_write_iops,fio_write_iops,net_tcp_gbps,net_tcp_gbps,net_tcp_gbps,wrk_static_rps,wrk_static_rps,wrk_static_rps,wrk_dynamic_rps,wrk_dynamic_rps,wrk_dynamic_rps,oltp_tps,oltp_tps,oltp_tps,idle_used_mb,idle_used_mb,idle_used_mb
+,mean,std,count,mean,std,count,mean,std,count,mean,std,count,mean,std,count,mean,std,count,mean,std,count,mean,std,count,mean,std,count,mean,std,count
+env,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+lxc-pmx8,473.23,2.91,5,1376.06,14.02,5,20495.35,503.08,5,55641.2,2779.28,5,23853.85,1192.36,5,25.87,3.64,5,68980.35,4311.63,5,267.56,1.73,5,720.34,38.97,5,148.75,0.08,5
+lxc-pmx9,470.9,1.55,5,1364.44,14.24,5,20374.52,134.3,5,61652.87,4611.12,5,26429.56,1976.58,5,28.55,3.17,5,69845.97,7867.95,5,256.88,7.87,5,782.83,38.42,5,142.68,0.35,5
+vm-pmx8,449.66,4.07,5,1308.06,9.68,5,18344.5,344.66,5,20236.76,584.64,5,8674.94,250.28,5,26.23,6.82,5,63946.62,5486.82,5,246.0,12.02,5,543.98,22.79,5,563.31,14.85,5
+vm-pmx9,445.41,3.68,5,1295.55,15.77,5,17899.8,280.08,5,20620.58,444.41,5,8839.63,190.56,5,24.85,4.33,5,63444.17,6286.0,5,247.6,4.58,5,506.41,18.9,5,517.02,22.52,5

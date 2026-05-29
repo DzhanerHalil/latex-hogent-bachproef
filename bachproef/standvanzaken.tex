@@ -1,51 +1,236 @@
 \chapter{\IfLanguageName{dutch}{Stand van zaken}{State of the art}}%
 \label{ch:stand-van-zaken}
 
-% Tip: Begin elk hoofdstuk met een paragraaf inleiding die beschrijft hoe
-% dit hoofdstuk past binnen het geheel van de bachelorproef. Geef in het
-% bijzonder aan wat de link is met het vorige en volgende hoofdstuk.
+Dit hoofdstuk biedt een uitgebreide literatuurstudie die de theoretische basis vormt voor het onderzoek naar LXC-containers als alternatief voor klassieke VM's op Proxmox binnen het VIC. Eerst worden de kernconcepten van virtualisatie en containerisatie behandeld (probleemdomein). Vervolgens worden mogelijke oplossingsrichtingen, best practices en toekomstperspectieven besproken (oplossingsdomein). De literatuurstudie bouwt voort op de inleiding en mondt uit in een identificatie van de onderzoekskloof die dit onderzoek adresseert.
 
-% Pas na deze inleidende paragraaf komt de eerste sectiehoofding.
+%%=============================================================================
+\section{Virtualisatie: basisbegrippen en architecturen}
+\label{sec:virtualisatie-basisbegrippen}
 
-Dit hoofdstuk bevat je literatuurstudie. De inhoud gaat verder op de inleiding, maar zal het onderwerp van de bachelorproef *diepgaand* uitspitten. De bedoeling is dat de lezer na lezing van dit hoofdstuk helemaal op de hoogte is van de huidige stand van zaken (state-of-the-art) in het onderzoeksdomein. Iemand die niet vertrouwd is met het onderwerp, weet nu voldoende om de rest van het verhaal te kunnen volgen, zonder dat die er nog andere informatie moet over opzoeken \autocite{Pollefliet2011}.
+Virtualisatie is het proces waarbij fysieke IT-resources (zoals processoren, geheugen, opslag en netwerkinterfaces) worden geabstraheerd om meerdere geïsoleerde omgevingen op één fysiek platform te maken. Binnen de context van servervirtualisatie worden twee fundamentele benaderingen onderscheiden: hardwarevirtualisatie met virtual machines en OS-level virtualisatie met containers~\autocite{Felter2015}.
 
-Je verwijst bij elke bewering die je doet, vakterm die je introduceert, enz.\ naar je bronnen. In \LaTeX{} kan dat met het commando \texttt{$\backslash${textcite\{\}}} of \texttt{$\backslash${autocite\{\}}}. Als argument van het commando geef je de ``sleutel'' van een ``record'' in een bibliografische databank in het Bib\LaTeX{}-formaat (een tekstbestand). Als je expliciet naar de auteur verwijst in de zin (narratieve referentie), gebruik je \texttt{$\backslash${}textcite\{\}}. Soms is de auteursnaam niet expliciet een onderdeel van de zin, dan gebruik je \texttt{$\backslash${}autocite\{\}} (referentie tussen haakjes). Dit gebruik je bv.~bij een citaat, of om in het bijschrift van een overgenomen afbeelding, broncode, tabel, enz. te verwijzen naar de bron. In de volgende paragraaf een voorbeeld van elk.
+\subsection{Hardwarevirtualisatie met virtual machines}
+\label{subsec:hardware-virtualisatie}
 
-\textcite{Knuth1998} schreef een van de standaardwerken over sorteer- en zoekalgoritmen. Experten zijn het erover eens dat cloud computing een interessante opportuniteit vormen, zowel voor gebruikers als voor dienstverleners op vlak van informatietechnologie~\autocite{Creeger2009}.
+Bij hardwarevirtualisatie wordt een \textit{hypervisor} ingezet die een abstractielaag vormt tussen de fysieke hardware en de virtuele omgevingen. Elke virtual machine (VM) draait een volledig besturingssysteem met een eigen kernel bovenop de hypervisor. Er bestaan twee types hypervisors~\autocite{Sharma2016}:
 
-Let er ook op: het \texttt{cite}-commando voor de punt, dus binnen de zin. Je verwijst meteen naar een bron in de eerste zin die erop gebaseerd is, dus niet pas op het einde van een paragraaf.
+\begin{itemize}
+    \item \textbf{Type~1 (bare-metal)}: draait rechtstreeks op de hardware, zonder tussenliggend besturingssysteem. Voorbeelden zijn KVM, VMware ESXi en Microsoft Hyper-V. Dit type wordt doorgaans ingezet in serveromgevingen vanwege de lagere overhead.
+    \item \textbf{Type~2 (hosted)}: draait als applicatie bovenop een conventioneel besturingssysteem. Voorbeelden zijn VirtualBox en VMware Workstation.
+\end{itemize}
 
-\begin{figure}
-  \centering
-  \includegraphics[width=0.8\textwidth]{grail.jpg}
-  \caption[Voorbeeld figuur.]{\label{fig:grail}Voorbeeld van invoegen van een figuur. Zorg altijd voor een uitgebreid bijschrift dat de figuur volledig beschrijft zonder in de tekst te moeten gaan zoeken. Vergeet ook je bronvermelding niet!}
-\end{figure}
+Proxmox VE maakt gebruik van KVM (Kernel-based Virtual Machine), een type~1-hypervisor die geïntegreerd is in de Linux-kernel~\autocite{ProxmoxDocs}. KVM biedt hardwareversnelde virtualisatie via Intel VT-x en AMD-V extensies, waardoor VM's performant kunnen draaien. Toch brengt elke VM een duidelijke overhead met zich mee: het laden van een volledige kernel, het toewijzen van dedicated geheugen en het emuleren van hardware kosten resources~\autocite{Felter2015}.
 
-\begin{listing}
-  \begin{minted}{python}
-    import pandas as pd
-    import seaborn as sns
+\subsection{OS-level virtualisatie met containers}
+\label{subsec:os-level-virtualisatie}
 
-    penguins = sns.load_dataset('penguins')
-    sns.relplot(data=penguins, x="flipper_length_mm", y="bill_length_mm", hue="species")
-  \end{minted}
-  \caption[Voorbeeld codefragment]{Voorbeeld van het invoegen van een codefragment.}
-\end{listing}
+OS-level virtualisatie, ook wel \textit{containerisatie} genoemd, is een lichtgewicht alternatief waarbij de containers de kernel van het host-besturingssysteem delen. In plaats van een volledige hardware-abstractie maken containers gebruik van kernelmechanismen om isolatie te realiseren~\autocite{Merkel2014}. De twee belangrijkste mechanismen zijn:
 
-\lipsum[7-20]
+\begin{itemize}
+    \item \textbf{Namespaces}: bieden procesgebaseerde isolatie van systeemresources. Elke container beschikt over eigen namespaces voor onder meer PID (procesidentificatie), netwerk, bestandssysteem en gebruikersbeheer. Een proces binnen een container kan daardoor alleen resources zien binnen zijn eigen namespace~\autocite{Nginx2021}.
+    \item \textbf{Control groups (cgroups)}: beperken en monitoren het resourcegebruik van containerprocessen. Met cgroups kan worden afgedwongen hoeveel CPU, geheugen en I/O-bandbreedte een container maximaal mag gebruiken~\autocite{Nginx2021, SecurityLabs2023}.
+\end{itemize}
 
-\begin{table}
-  \centering
-  \begin{tabular}{lcr}
-    \toprule
-    \textbf{Kolom 1} & \textbf{Kolom 2} & \textbf{Kolom 3} \\
-    $\alpha$         & $\beta$          & $\gamma$         \\
-    \midrule
-    A                & 10.230           & a                \\
-    B                & 45.678           & b                \\
-    C                & 99.987           & c                \\
-    \bottomrule
-  \end{tabular}
-  \caption[Voorbeeld tabel]{\label{tab:example}Voorbeeld van een tabel.}
+Doordat containers geen eigen kernel laden en geen hardware emuleren, is hun overhead aanzienlijk lager dan die van VM's. \textcite{Felter2015} tonen in hun vergelijkende studie aan dat containers bijna native performance behalen voor CPU-intensieve workloads, met een overhead van minder dan 1\%. \textcite{Soltesz2007} bevestigen dit en voegen toe dat OS-level virtualisatie een hogere dichtheid van geïsoleerde omgevingen per server mogelijk maakt.
+
+\subsection{Vergelijking van VM's en containers: overhead en performance}
+\label{subsec:vergelijking-overhead}
+
+De fundamentele architecturale verschillen tussen VM's en containers vertalen zich naar meetbare prestatieverschillen. Tabel~\ref{tab:vm-vs-container-overhead} geeft een samenvatting van de belangrijkste kwantitatieve verschillen op basis van de literatuur.
+
+\begin{table}[h]
+    \centering
+    \caption[Overhead VM's vs.\ containers]{Vergelijking van de typische overhead van VM's en LXC-containers op basis van literatuurgegevens~\autocite{LogicWeb2025, Felter2015, TechOpt2025}.}
+    \label{tab:vm-vs-container-overhead}
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Criterium} & \textbf{VM (KVM)} & \textbf{LXC-container} \\
+        \midrule
+        RAM-overhead per instantie   & 250--500~MB  & 10--50~MB  \\
+        Opstarttijd                  & 10--60~s     & 1--3~s     \\
+        CPU-overhead                 & 5--15\%      & <1\%       \\
+        Disk I/O-overhead            & Matig        & Minimaal   \\
+        Dichtheid per host           & Laag--Matig  & Hoog       \\
+        \bottomrule
+    \end{tabular}
 \end{table}
 
+\textcite{ArXiv2023Convergence} benadrukken echter dat de keuze tussen VM's en containers niet louter op performance kan worden gebaseerd. Aspecten zoals isolatiesterkte, beveiliging, compatibiliteit en beheergemak spelen eveneens een doorslaggevende rol. In de volgende secties worden deze aspecten afzonderlijk behandeld.
+
+%%=============================================================================
+\section{LXC versus Docker: system containers versus application containers}
+\label{sec:lxc-versus-docker}
+
+Binnen het domein van OS-level virtualisatie bestaan er verschillende containerimplementaties. De twee meest voorkomende zijn LXC (Linux Containers) en Docker. Hoewel beide technologieën dezelfde kernelmechanismen (namespaces en cgroups) benutten, verschillen zij fundamenteel in hun ontwerpfilosofie en toepassingsgebied~\autocite{Merkel2014, Soltesz2007}.
+
+\subsection{LXC: system containers}
+\label{subsec:lxc-system-containers}
+
+LXC biedt zogenaamde \textit{system containers}: volledige Linux-omgevingen die zich gedragen als lichtgewicht virtual machines. Een LXC-container heeft een eigen init-systeem (doorgaans \texttt{systemd}), kan meerdere services tegelijk draaien en heeft een eigen netwerkstack inclusief IP-adres. De gebruikerservaring is vergelijkbaar met het beheer van een traditionele VM, maar dan met de lage overhead van containerisatie~\autocite{Soltesz2007}.
+
+LXC-containers zijn bijzonder geschikt voor scenario's waarin een volledige Linux-omgeving nodig is, zoals een webserver gecombineerd met een lokale database, of een ontwikkelomgeving met meerdere tools. In het kader van het VIC, waar diverse services als afzonderlijke ``machines'' worden aangeboden, sluiten LXC-containers conceptueel goed aan bij de bestaande werkwijze met VM's.
+
+\subsection{Docker: application containers}
+\label{subsec:docker-application-containers}
+
+Docker richt zich daarentegen op \textit{application containers}: elke container draait idealiter één enkel proces of service. Docker-containers worden gebouwd op basis van gelaagde \textit{images} die via een \texttt{Dockerfile} worden gedefinieerd, en worden doorgaans als \textit{immutable} beschouwd. Bij updates wordt een nieuw image gebuild in plaats van de bestaande container aan te passen~\autocite{Merkel2014}. Docker is nauw verweven met microservices-architecturen en CI/CD-pipelines.
+
+\subsection{Implicatie voor het onderzoek}
+\label{subsec:implicatie-lxc-docker}
+
+Het onderscheid tussen system containers (LXC) en application containers (Docker) is van directe relevantie voor het VIC. Het VIC biedt services aan als afzonderlijke, langlopende omgevingen, een use-case die beter aansluit bij het LXC-model dan bij het Docker-model. Dit onderzoek focust daarom expliciet op LXC-containers als alternatief voor VM's, en niet op Docker. De relatie met Docker en Kubernetes wordt wel besproken in het kader van de toekomstige uitbreidingsplannen van het VIC (zie Sectie~\ref{sec:kubernetes-orkestratie}).
+
+%%=============================================================================
+\section{Proxmox Virtual Environment: architectuur en mogelijkheden}
+\label{sec:proxmox-architectuur}
+
+Proxmox VE is een open-source servervirtualisatieplatform dat KVM-gebaseerde VM's en LXC-containers aanbiedt via een geïntegreerde webinterface~\autocite{ProxmoxDocs}. Het platform biedt functionaliteiten voor clusterbeheer, high availability, software-defined storage (met ZFS, Ceph en LVM) en backup via Proxmox Backup Server (PBS).
+
+\subsection{KVM-integratie}
+\label{subsec:kvm-integratie}
+
+Voor VM's maakt Proxmox gebruik van QEMU/KVM, de standaard Linux-hypervisor. Via de Proxmox-webinterface kunnen VM's worden aangemaakt, geconfigureerd en gemonitord. VM's bieden volledige flexibiliteit: ze kunnen elk besturingssysteem draaien (Linux, Windows, BSD) en hebben toegang tot gevirtualiseerde hardware inclusief GPU passthrough~\autocite{ProxmoxDocs}.
+
+\subsection{LXC-integratie}
+\label{subsec:lxc-integratie}
+
+Proxmox integreert LXC-containers als eersteklas virtualisatieobjecten naast VM's~\autocite{ProxmoxWiki}. LXC-containers kunnen worden aangemaakt op basis van voorgedefinieerde templates (beschikbaar via de Proxmox template repository) en worden beheerd via dezelfde webinterface als VM's. Ondersteunde functionaliteiten omvatten:
+
+\begin{itemize}
+    \item Firewall-integratie per container;
+    \item Snapshot- en backupmogelijkheden;
+    \item Live migratie tussen clusternodes;
+    \item Toewijzing van CPU-, geheugen- en opslaglimieten via cgroups;
+    \item Ondersteuning voor zowel \textit{privileged} als \textit{unprivileged} containers.
+\end{itemize}
+
+\textcite{ReadySpace2023} merken op dat Proxmox een van de weinige platformen is die VM's en containers probleemloos naast elkaar ondersteunen, wat het bijzonder geschikt maakt voor hybride omgevingen.
+
+\subsection{Versieverschillen: Proxmox 8 versus Proxmox 9}
+\label{subsec:proxmox-versies}
+
+Het VIC draait momenteel op Proxmox~8. De recente (beta-)release van Proxmox~9 introduceert enkele relevante wijzigingen voor LXC-containers~\autocite{Xtom2025, UnixHost2025, Saturnme2025}:
+
+\begin{itemize}
+    \item \textbf{LXC-versie}: Proxmox~9 bevat LXC~6.0.4 (in plaats van LXC~5.0.x in Proxmox~8), met verbeterde cgroup~v2-integratie en betere ondersteuning voor recente Linux-kernels.
+    \item \textbf{Kernel}: Proxmox~9 draait op kernel~6.14.x in plaats van de 6.5/6.8-kernels van Proxmox~8. Een nieuwere kernel brengt verbeterde hardwareondersteuning, betere schedulingalgoritmen en beveiligingspatches mee.
+    \item \textbf{Snapshot-ondersteuning}: Proxmox~9 biedt ondersteuning voor snapshots van thick-provisioned LVM-volumes, een functionaliteit die in Proxmox~8 beperkt was~\autocite{Proxmox2025}.
+    \item \textbf{Storage}: verbeterde integratie met ZFS en Ceph, wat indirect de performance van containers kan beïnvloeden.
+\end{itemize}
+
+De impact van deze wijzigingen op de dagelijkse praktijk van het VIC is vooralsnog niet gedocumenteerd. Dit vormt een motivatie voor het praktische vergelijkende element van dit onderzoek.
+
+%%=============================================================================
+\section{Beveiliging en isolatie}
+\label{sec:beveiliging-isolatie}
+
+Beveiliging is een cruciaal aspect bij de keuze tussen VM's en containers, met name in multi-tenant omgevingen zoals het VIC waar meerdere gebruikersgroepen (studenten, docenten, projectteams) naast elkaar opereren.
+
+\subsection{Isolatiemodel van VM's}
+\label{subsec:isolatie-vms}
+
+VM's bieden de sterkste vorm van isolatie. Elke VM draait een eigen kernel en communiceert met de hardware uitsluitend via de hypervisor. Een kwetsbaarheid of compromittering binnen een VM is in principe beperkt tot die VM; een aanvaller moet een additionele \textit{VM escape}-kwetsbaarheid exploiteren om toegang te verkrijgen tot de host of andere VM's~\autocite{ArXiv2021Isolation}. Dergelijke kwetsbaarheden zijn zeldzaam maar niet onmogelijk. Historische voorbeelden zoals VENOM (CVE-2015-3456) tonen aan dat hypervisor-kwetsbaarheden wel degelijk voorkomen.
+
+\subsection{Isolatiemodel van containers}
+\label{subsec:isolatie-containers}
+
+Containers delen de kernel van de host, wat een fundamenteel kleiner isolatiedomein impliceert. Een kwetsbaarheid in de gedeelde kernel kan in theorie alle containers op de host beïnvloeden~\autocite{Aquasec2024}. De isolatie wordt afgedwongen door namespaces en cgroups, maar deze mechanismen zijn niet ontworpen als beveiligingsgrens in dezelfde mate als een hypervisor~\autocite{Infosec2021}.
+
+Toch zijn er grote verbeteringen doorgevoerd in de beveiligingsopbouw van containers. Kernelmechanismen zoals \textit{seccomp} (beperking van systeemaanroepen), \textit{AppArmor} en \textit{SELinux} (verplichte toegangscontrole) voegen extra beveiligingslagen toe~\autocite{SecurityLabs2023}.
+
+\subsection{Privileged versus unprivileged containers}
+\label{subsec:privileged-unprivileged}
+
+Een belangrijk onderscheid binnen LXC is dat tussen \textit{privileged} en \textit{unprivileged} containers:
+
+\begin{itemize}
+    \item \textbf{Privileged containers}: de root-gebruiker binnen de container komt overeen met de root-gebruiker op de host. Een succesvolle container-escape resulteert hierdoor in volledige controle over de host. Dit type container biedt maximale compatibiliteit maar minimale beveiliging.
+    \item \textbf{Unprivileged containers}: maken gebruik van \textit{user namespaces} om de UID/GID-mapping te verschuiven. Root binnen de container correspondeert met een onbevoorrechte gebruiker op de host. Een container-escape levert daardoor beperkte rechten op~\autocite{SecurityLabs2023}.
+\end{itemize}
+
+Proxmox VE ondersteunt beide types en adviseert het gebruik van unprivileged containers als standaard~\autocite{ProxmoxWiki}. Voor het VIC, waar multi-tenant isolatie essentieel is, vormen unprivileged containers de minimaal vereiste configuratie indien LXC-containers worden ingezet.
+
+\subsection{Beoordeling voor het VIC}
+\label{subsec:beveiliging-beoordeling}
+
+Op basis van de literatuur kan worden geconcludeerd dat VM's de sterkste beveiligingsgaranties bieden. Voor werklasten met strikte beveiligingseisen, zoals productiedatabases met gevoelige gegevens of omgevingen waarop externen toegang hebben, blijven VM's de aan te raden keuze. Voor minder kritieke services, testomgevingen en interne tools kunnen correct geconfigureerde unprivileged LXC-containers een acceptabel beveiligingsniveau bieden, op voorwaarde dat aanvullende maatregelen zoals seccomp-profielen en AppArmor-policies worden toegepast~\autocite{Aquasec2024, SecurityLabs2023}.
+
+%%=============================================================================
+\section{Backup en disaster recovery}
+\label{sec:backup-en-disaster-recovery}
+
+Het VIC is afhankelijk van betrouwbare backup- en restoremechanismen om de continuïteit van de aangeboden services te garanderen. Proxmox Backup Server (PBS) is de standaardoplossing binnen het Proxmox-ecosysteem en ondersteunt zowel VM-backups als LXC-backups, hoewel de onderliggende mechanismen aanzienlijk verschillen.
+
+\subsection{VM-backups: block-level}
+\label{subsec:vm-backups}
+
+VM-backups in Proxmox werken op \textit{block-level}: de volledige virtuele schijf wordt als blokken behandeld. Bij incrementele backups maakt PBS gebruik van \textit{dirty bitmaps} om enkel de gewijzigde blokken te identificeren en te kopiëren~\autocite{ItNotes2020}. Dit resulteert in snelle incrementele backups, ongeacht het aantal bestanden binnen de VM.
+
+\subsection{LXC-backups: file-level}
+\label{subsec:lxc-backups}
+
+LXC-backups werken daarentegen op \textit{file-level}: alle bestanden binnen de container worden individueel geëvalueerd. Voor kleine containers (tot enkele tientallen gigabytes) levert dit vergelijkbare of zelfs betere resultaten op dan VM-backups. Bij grotere containers, met name containers met een groot aantal kleine bestanden, wordt het file-level mechanisme echter veel trager~\autocite{ProxmoxForum2021, ProxmoxForum2024}.
+
+Ervaringen uit de Proxmox-community bevestigen dit beeld. Gebruikers rapporteren dat LXC-backups naar PBS trager en soms groter zijn dan verwacht, vooral bij containers die meer dan 100~GB aan data bevatten~\autocite{ProxmoxForum2025}. Deze bevinding is relevant voor het VIC, waar bepaalde services (zoals databaseservers) aanzienlijke hoeveelheden data kunnen bevatten.
+
+\subsection{Implicaties voor het VIC}
+\label{subsec:backup-implicaties}
+
+Voor het VIC leidt de analyse van backupmechanismen tot een aangepaste aanbeveling per type service. Kleine, lichtgewicht services (webservers, reverse proxies, DNS-servers) met beperkte opslagbehoefte kunnen als LXC-container worden gebackupt zonder significante nadelen. Services met grote datasets of veel kleine bestanden, zoals databaseservers of fileservers, worden bij voorkeur als VM geïmplementeerd om te profiteren van de efficiëntere block-level backups.
+
+%%=============================================================================
+\section{Kubernetes en containerorkestratie}
+\label{sec:kubernetes-orkestratie}
+
+Het VIC heeft toekomstplannen voor de implementatie van Kubernetes als container-orkestratieplatform. Het is daarom relevant om de relatie tussen LXC-containers en Kubernetes te analyseren.
+
+\subsection{Kubernetes: architectuur en verwachtingen}
+\label{subsec:kubernetes-architectuur}
+
+Kubernetes is het de facto standaardplatform voor het orkestreren van \textit{application containers}~\autocite{IEEE2014Containers}. Het platform beheert de levenscyclus, schaalbaarheid en netwerkcommunicatie van containers via een beschrijvend configuratiemodel. Kubernetes maakt standaard gebruik van een \textit{Container Runtime Interface (CRI)}, die wordt geïmplementeerd door runtimes zoals containerd, CRI-O of Docker Engine.
+
+\subsection{LXC en Kubernetes: architecturale mismatch}
+\label{subsec:lxc-kubernetes-mismatch}
+
+LXC-containers zijn system containers met een init-systeem en meerdere processen. Kubernetes verwacht daarentegen application containers die typisch één proces draaien en snel kunnen worden opgestart, gestopt en geschaald. Er is dus een fundamentele architecturale mismatch tussen LXC en Kubernetes~\autocite{IEEE2014Containers}.
+
+In theorie kan LXC via LXD (de daemon-gebaseerde manager voor LXC) worden geïntegreerd met Kubernetes~\autocite{StackOverflow2020}. In de praktijk is deze integratie echter experimenteel en niet breed ondersteund. De gangbare benadering is om Kubernetes te draaien met OCI-conforme container runtimes (containerd of CRI-O) die application containers beheren.
+
+\subsection{Implicatie voor het VIC}
+\label{subsec:kubernetes-implicatie}
+
+Voor het VIC betekent dit dat LXC-containers en Kubernetes aanvullende technologieën zijn, en geen directe concurrenten. LXC-containers kunnen worden ingezet voor langlopende systeemservices (als vervanging van VM's), terwijl Kubernetes wordt ingezet voor microservices en schaalbare applicaties (als vervanging van of aanvulling op traditionele deployments). Een weloverwogen combinatie van beide technologieën kan het VIC in staat stellen om zowel de korte- als de langetermijndoelstellingen te realiseren.
+
+%%=============================================================================
+\section{Gerelateerd onderzoek en onderzoekskloof}
+\label{sec:onderzoekskloof}
+
+De bestaande literatuur biedt een solide basis voor het begrijpen van de technische verschillen tussen VM's en containers. \textcite{Felter2015} presenteerden een invloedrijke performancevergelijking, hoewel hun studie zich richtte op Docker in plaats van LXC. \textcite{Sharma2016} vergeleken containers en VM's op schaal, maar in een cloudcontext met andere vereisten dan een onderwijsomgeving. \textcite{ArXiv2023Convergence} analyseerden de convergentie van container- en VM-technologieën, maar zonder specifieke aandacht voor Proxmox als platform.
+
+Er is veel onderzoek beschikbaar over Docker in combinatie met Kubernetes in cloud- en enterprise-omgevingen~\autocite{ArXiv2018DevOps, IEEE2018}. Er zijn echter weinig praktische studies die:
+
+\begin{enumerate}
+    \item LXC-containers specifiek vergelijken met VM's op het Proxmox-platform;
+    \item de versieverschillen tussen opeenvolgende Proxmox-releases kwantificeren;
+    \item de bevindingen vertalen naar concrete richtlijnen voor een onderwijsomgeving zoals het VIC.
+\end{enumerate}
+
+Dit onderzoek wil dit tekort opvullen door een gecombineerde literatuurstudie en proof-of-concept uit te voeren die specifiek is afgestemd op de context, workloads en vereisten van het VIC van HOGENT.
+
+%%=============================================================================
+\section{Samenvatting van de literatuurstudie}
+\label{sec:samenvatting-literatuurstudie}
+
+De literatuurstudie levert de volgende kernbevindingen op die als basis dienen voor het verdere onderzoek:
+
+\begin{enumerate}
+    \item \textbf{Performance}: containers bieden significant lagere overhead dan VM's op het vlak van geheugengebruik, opstarttijd en CPU-verbruik. De exacte besparingen zijn contextafhankelijk en moeten worden gekwantificeerd in de specifieke VIC-omgeving.
+    \item \textbf{Isolatie en beveiliging}: VM's bieden de sterkste isolatiegaranties. Unprivileged LXC-containers met aanvullende beveiligingsmaatregelen kunnen een acceptabel niveau bieden voor minder kritieke workloads.
+    \item \textbf{Backup}: VM-backups zijn efficiënter voor grote datasets (block-level), terwijl LXC-backups voldoen voor kleine containers (file-level).
+    \item \textbf{Proxmox-versies}: Proxmox~9 brengt verbeteringen voor LXC-containers, waaronder een nieuwere LXC-versie, verbeterde cgroup~v2-integratie en betere snapshot-ondersteuning.
+    \item \textbf{Kubernetes}: LXC en Kubernetes vullen elkaar aan; LXC is geschikt voor systeemservices, Kubernetes voor schaalbare microservices.
+    \item \textbf{Onderzoekskloof}: er ontbreken praktische vergelijkende studies voor LXC versus VM's op Proxmox in een onderwijscontext.
+\end{enumerate}
+
+%% TODO: Na afronding van de PoC kan hier een extra subsectie worden toegevoegd
+%% die de relatie legt tussen de literatuurbevindingen en de eigen meetresultaten.

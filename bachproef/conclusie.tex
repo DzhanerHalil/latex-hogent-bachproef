@@ -5,14 +5,48 @@
 \chapter{Conclusie}%
 \label{ch:conclusie}
 
-% TODO: Trek een duidelijke conclusie, in de vorm van een antwoord op de
-% onderzoeksvra(a)g(en). Wat was jouw bijdrage aan het onderzoeksdomein en
-% hoe biedt dit meerwaarde aan het vakgebied/doelgroep? 
-% Reflecteer kritisch over het resultaat. In Engelse teksten wordt deze sectie
-% ``Discussion'' genoemd. Had je deze uitkomst verwacht? Zijn er zaken die nog
-% niet duidelijk zijn?
-% Heeft het onderzoek geleid tot nieuwe vragen die uitnodigen tot verder 
-%onderzoek?
+In dit afsluitende hoofdstuk worden de onderzoeksvragen uit Sectie~\ref{sec:onderzoeksvraag} systematisch beantwoord aan de hand van de empirische bevindingen uit Hoofdstuk~\ref{ch:resultaten}. Vervolgens wordt de bijdrage van het onderzoek voor het VIC en het bredere domein geduid, gevolgd door een kritische reflectie op de beperkingen en suggesties voor vervolgonderzoek.
 
-\lipsum[76-80]
+%%=============================================================================
+\section{Beantwoording van de onderzoeksvragen}
+\label{sec:beantwoording-vragen}
 
+\subsection*{Hoofdonderzoeksvraag}
+\textit{In welke mate kan het VIC van HOGENT profiteren van het inzetten van LXC-containers op Proxmox in plaats van klassieke VM's, rekening houdend met performance, beveiliging, management en toekomstige uitbreidingsmogelijkheden zoals Kubernetes?}
+
+De empirische metingen tonen dat het VIC in de meeste van zijn huidige werklasten substantieel kan profiteren van een gedeeltelijke migratie naar LXC-containers. De grootste winsten zitten in geheugenfootprint (ongeveer 73\,\% lagere idle-RAM), schijf-I/O (175 tot 199\,\% meer IOPS) en applicatieworkloads die deze twee voordelen combineren, zoals MariaDB OLTP (43\,\% meer transacties per seconde). Bovendien start een LXC ongeveer acht keer sneller dan een VM, wat elastische scenario's en snelle rollback mogelijk maakt. De nadelen liggen niet in runtime-prestatie, maar in twee specifieke domeinen: de file-level backup-strategie van LXC is bij grote datasets en frequente incrementele backups inferieur aan de block-level dirty-bitmap van VM (factor 9 tot 16 voor incrementele backups), en de isolatie-grens van een LXC blijft de gedeelde host-kernel, wat in multi-tenant scenario's met externe gebruikers minder garanties biedt dan een hypervisor-grens. Een ``alles-of-niets''-migratie is dus niet aangewezen; een werkload-gebaseerde keuze, gestuurd door het beslissingskader uit Sectie~\ref{sec:beslissingskader}, is dat wel.
+
+\subsection*{Deelvragen probleemdomein}
+\textbf{Deelvraag~1: Functionele en technische verschillen tussen VM's en LXC-containers binnen Proxmox.} VM's draaien op een KVM-hypervisor met een eigen kernel en geëmuleerde hardware, terwijl LXC's de host-kernel delen via Linux-namespaces en cgroups. Dit verschil verklaart in één lijn de gemeten resultaten: VM's betalen een hypervisor-overhead in geheugen, opstarttijd en I/O-pad, maar krijgen daarvoor sterkere isolatie en breder OS-bereik in ruil. LXC's vallen weg in scenario's die kernel-toegang of een niet-Linux-OS vereisen.
+
+\textbf{Deelvraag~2: Impact op performance, resource-usage en schaalbaarheid.} LXC's leveren in alle gemeten dimensies vergelijkbare of betere prestaties dan VM's. Het verschil is klein voor pure CPU-doorvoer (5\,\%) en netwerk-bandbreedte (statistisch niet significant), aanzienlijk voor geheugendoorvoer (12--14\,\%), en groot voor schijf-IOPS (+187\,\%) en database-throughput (+43\,\%). De gecombineerde impact op een 12~GB RAM-host is dat ongeveer vier keer meer LXC-instanties parallel kunnen draaien dan VM-instanties, wat de schaalbaarheid van het VIC concreet vergroot zonder hardware-uitbreiding.
+
+\textbf{Deelvraag~3: Beveiligingsimplicaties en isolatie tussen klantomgevingen.} VM's bieden de sterkste isolatie omdat de hypervisor de grens vormt en niet de gedeelde kernel. Unprivileged LXC's leveren een acceptabel beveiligingsniveau dankzij user-namespaces (UID-remapping naar UID 100\,000) en seccomp-filtering met achttien geblokkeerde syscalls; een breakout zou daardoor leiden tot een onbevoorrechte host-gebruiker met beperkt blast radius. Privileged LXC's missen de user-namespace en zijn daardoor ongeschikt voor multi-tenant scenario's waarin externe gebruikers de container kunnen beïnvloeden. Voor het VIC betekent dit dat unprivileged LXC de standaardkeuze moet zijn voor containerwerklasten, en privileged LXC enkel als uitzondering met expliciete motivatie.
+
+\textbf{Deelvraag~4: Verschillen tussen Proxmox~8 en Proxmox~9 op het vlak van LXC-functionaliteit.} De prestatieverschillen tussen beide versies zijn klein en doorgaans statistisch niet significant (op enkele I/O-metrieken na, waar Pmx~9 marginaal sneller is). De waarde van Proxmox~9 voor LXC ligt vooral in cgroup~v2-integratie, een nieuwere kernel (6.14 vs 6.8) en verbeterde snapshot-ondersteuning voor thin-provisioned LVM. Een upgrade is daarmee aanbevolen voor bredere kernel-feature-ondersteuning, maar levert op zichzelf geen prestatiedoorbraak op.
+
+\textbf{Deelvraag~5: Backup en restore via PBS.} VM-backups via PBS zijn dankzij dirty-bitmap-tracking aanzienlijk efficiënter voor incrementele backups (3 seconden) dan LXC-backups (25 tot 50 seconden), en LXC-restores duren ongeveer twee keer langer dan VM-restores bij dezelfde dataset. Voor datasets onder 10~GB met dagelijkse backups verdwijnt dit verschil in de operationele ruis; voor grotere datasets en frequentere backups is het een substantieel argument om bij VM te blijven.
+
+\subsection*{Deelvragen oplossingsdomein}
+\textbf{Deelvraag~6: Geschikte scenario's voor LXC versus VM binnen het VIC.} LXC unprivileged is de aangewezen keuze voor lichte Linux-services (DNS, reverse proxy, statische webservers, ontwikkelomgevingen, kleine MariaDB-instanties), voor I/O-zware workloads (zoals databases tot 50~GB), en voor scenario's waarin snelle herstart of dichtheidsschaling telt. VM blijft de keuze voor niet-Linux-OS, multi-tenant productieomgevingen met externe gebruikers, en grote datasets met frequente incrementele backups.
+
+\textbf{Deelvraag~7: Best practices voor LXC in productie.} Sectie~\ref{sec:best-practices} formuleert vijf concrete aanbevelingen: unprivileged als standaard, expliciet activeren van het AppArmor-profiel \texttt{lxc-container-default-cgns}, dagelijkse full backups voor LXC's boven 20~GB, systematisch gebruik van \texttt{baseline}-snapshots vóór onderhoudsoperaties, en periodieke garbage collection op de PBS-datastore via een \texttt{systemd}-timer.
+
+\textbf{Deelvraag~8: Relatie LXC en Kubernetes.} Hoewel LXC en Kubernetes beide in het container-domein opereren, vullen ze elkaar aan eerder dan dat ze elkaar uitsluiten. LXC is geschikt voor langlopende systeemservices (de huidige VIC-aanbod), terwijl Kubernetes-microservices typisch via OCI-conforme runtimes draaien, niet rechtstreeks via LXC. Een toekomstige Kubernetes-uitrol in het VIC kan parallel naast bestaande LXC-services bestaan, eventueel met LXC-containers als ``platform''-laag voor Kubernetes-control-plane-componenten en VM's of LXC's voor de applicatie-pods.
+
+\textbf{Deelvraag~9: Richtlijnen voor de keuze per workload.} Het beslissingskader van Figuur~\ref{fig:decision_tree} reduceert de keuze tot zeven sequentiële vragen die VIC-beheerders direct kunnen toepassen. Het kader is opgebouwd op basis van empirische metingen, maar laat ruimte voor contextuele afwegingen bij randgevallen.
+
+%%=============================================================================
+\section{Bijdrage en meerwaarde}
+
+Dit onderzoek levert drie tastbare bijdragen op. Ten eerste is er het beslissingskader (Figuur~\ref{fig:decision_tree}), dat IT-beheerders binnen en buiten het VIC een gestructureerde keuzeleidraad biedt op basis van werkelijk gemeten verschillen, niet op basis van algemene aanbevelingen uit forums. Ten tweede biedt het onderzoek een kwantitatieve vergelijking in een onderwijs- en VIC-specifieke context, wat ontbrak in de bestaande literatuur die vooral cloud- of enterprise-omgevingen onderzocht (Felter e.a., 2015; Sharma e.a., 2016). Ten derde levert het onderzoek een gedetailleerd overzicht van de versieverschillen tussen Proxmox~8 en~9 voor LXC-werklasten, inclusief de praktische operationele aandachtspunten die niet in de release-notes staan. De volledige experimentpijplijn (scripts, data, geaggregeerde CSV's en grafieken) is openbaar beschikbaar in de bijhorende repository, wat replicatie door derden eenvoudig maakt.
+
+%%=============================================================================
+\section{Beperkingen}
+
+De geneste virtualisatieopzet op één fysieke server begrenst de absolute waarden van met name netwerk- en schijfmetingen; in een bare-metal context kunnen de absolute getallen verschillen, terwijl de relatieve verhoudingen tussen VM en LXC waarschijnlijk behouden blijven. De ``large''-dataset werd op 12~GB beperkt in plaats van de oorspronkelijke 50~GB, omwille van de thin-pool-capaciteit van de geneste testnodes. Het aantal herhalingen per prestatie-meting bedroeg vijf, wat statistisch verantwoord is voor $t$-tests maar in productie validatie verdient. De beveiligingsaudit gebruikte de Proxmox-default LXC-configuratie zonder expliciet AppArmor-profiel, wat het gemeten isolatieniveau minimaliseert ten opzichte van een aangepaste productie-opzet. De community-scripts werden gepind op één commit-hash; de bevindingen rond deployment-gemak gelden enkel voor die versie. Tenslotte werden geen kwalitatieve interviews afgenomen met VIC-beheerders, wat het onderzoek beperkt tot een technisch-empirische analyse zonder organisatorische dimensie.
+
+%%=============================================================================
+\section{Aanbevelingen voor toekomstig onderzoek}
+
+Vier richtingen voor vervolgonderzoek liggen voor de hand. Een eerste betreft de bare-metal validatie van het beslissingskader: wat is de gemeten netwerkbandbreedte buiten een geneste opzet, en hoe verhouden de absolute backup-tijden zich bij datasets boven 50~GB? Een tweede richting is de productie-implementatie van een eerste batch LXC-services in het VIC, met langetermijn-monitoring (drift, geheugenlek, snapshot-stabiliteit) over enkele maanden. Een derde richting onderzoekt de combinatie van LXC met Kubernetes binnen Proxmox, in lijn met de toekomstplannen die in Sectie~\ref{sec:kubernetes-orkestratie} besproken zijn: kan LXC dienstdoen als platform-laag voor de Kubernetes-control-plane terwijl de pods op een aparte runtime draaien? Een vierde richting verbreedt de vergelijking naar andere container-runtimes binnen Proxmox, zoals Incus (de fork van LXD na de overname door Canonical), en evalueert in hoeverre die de huidige LXC-functionaliteit aanvult of vervangt voor toekomstige VIC-werklasten.
